@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.vpc.common</groupId>
     <artifactId>gomail</artifactId>
-    <version>1.2.6</version>
+    <version>1.2.6</version> <!-- should inc-->
     <packaging>jar</packaging>
     <name>net.vpc.common.gomail</name>
     <url>https://github.com/thevpc/upa/wiki</url>
@@ -72,7 +72,7 @@
         <dependency>
             <groupId>net.vpc.common</groupId>
             <artifactId>vpc-common-utils</artifactId>
-            <version>[1.5,)</version>
+            <version>[1.6,)</version>
         </dependency>
         <dependency>
             <groupId>net.vpc.upa</groupId>
