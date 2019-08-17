@@ -14,6 +14,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
+
+import net.vpc.common.io.FileUtils;
 import net.vpc.common.io.IOUtils;
 
 /**
@@ -103,7 +105,7 @@ public class GoMailDataSourceFactory {
     }
 
     public static GoMailDataSource forPattern(String url) {
-        File file = IOUtils.toFileLenient(url);
+        File file = FileUtils.toFileLenient(url);
         if (file == null) {
             throw new IllegalArgumentException("Unsupported");
         }

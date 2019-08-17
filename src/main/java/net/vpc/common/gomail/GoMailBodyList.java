@@ -50,7 +50,7 @@ public class GoMailBodyList implements Iterable<GoMailBody> {
     }
 
     public void add(InputStream content, String contentType, boolean expandable) throws IOException {
-        add(new GoMailBodyContent(IOUtils.toByteArray(content), contentType, expandable));
+        add(new GoMailBodyContent(IOUtils.loadByteArray(content), contentType, expandable));
     }
 
     public void add(File content, String contentType, boolean expandable) throws IOException {

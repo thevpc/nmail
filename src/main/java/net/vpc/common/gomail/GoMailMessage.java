@@ -6,6 +6,7 @@
 package net.vpc.common.gomail;
 
 import net.vpc.common.gomail.modules.GoMailModuleSerializer;
+import net.vpc.common.io.FileUtils;
 import net.vpc.common.io.IOUtils;
 
 import java.io.File;
@@ -101,7 +102,7 @@ public class GoMailMessage implements Serializable, Cloneable {
             } else if (value instanceof File) {
                 File file = (File) value;
                 if (contentType == null) {
-                    contentType = IOUtils.probeContentType(file);
+                    contentType = FileUtils.probeContentType(file);
                 }
                 try {
                     theBody = (new GoMailBodyPath((file).toURI().toURL().toString(), contentType, true));
@@ -112,7 +113,7 @@ public class GoMailMessage implements Serializable, Cloneable {
                 URL file = (URL) value;
 
                 if (contentType == null) {
-                    contentType = IOUtils.probeContentType(file);
+                    contentType = FileUtils.probeContentType(file);
                 }
                 theBody = (new GoMailBodyPath((file).toString(), contentType, true));
             } else {

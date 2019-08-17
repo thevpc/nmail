@@ -13,6 +13,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+import net.vpc.common.io.FileUtils;
 import net.vpc.common.io.IOUtils;
 
 /**
@@ -99,7 +100,7 @@ public class GoMail implements Serializable, Cloneable {
             } else if (value instanceof File) {
                 File file = (File) value;
                 if (contentType == null) {
-                    contentType = IOUtils.probeContentType(file);
+                    contentType = FileUtils.probeContentType(file);
                 }
                 try {
                     theBody = (new GoMailBodyPath((file).toURI().toURL().toString(), contentType, true));
@@ -110,7 +111,7 @@ public class GoMail implements Serializable, Cloneable {
                 URL file = (URL) value;
 
                 if (contentType == null) {
-                    contentType = IOUtils.probeContentType(file);
+                    contentType = FileUtils.probeContentType(file);
                 }
                 theBody = (new GoMailBodyPath((file).toString(), contentType, true));
             } else {

@@ -27,6 +27,7 @@ import net.vpc.common.gomail.*;
 import net.vpc.common.gomail.util.DefaultGoMailContext;
 import net.vpc.common.gomail.GoMailDataSourceRow;
 import net.vpc.common.gomail.util.GoMailUtils;
+import net.vpc.common.io.FileUtils;
 import net.vpc.common.io.IOUtils;
 
 /**
@@ -438,7 +439,7 @@ public class GoMailModuleProcessor {
         if (o instanceof byte[]) {
             return ((byte[]) o);
         } else if (o instanceof InputStream) {
-            return IOUtils.toByteArray((InputStream) o);
+            return IOUtils.loadByteArray((InputStream) o);
         } else {
             return (byte[]) o;
         }
@@ -455,7 +456,7 @@ public class GoMailModuleProcessor {
         } else if (b instanceof GoMailBodyPath) {
             String pp = ((GoMailBodyPath) b).getPath();
             String path = expr == null ? pp : expr.eval(pp);
-            File f = IOUtils.toFileLenient(path);
+            File f = FileUtils.toFileLenient(path);
             if (f != null) {
                 return f;
             }

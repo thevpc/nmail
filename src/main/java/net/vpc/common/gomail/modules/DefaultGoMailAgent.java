@@ -27,10 +27,10 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
-import static net.vpc.common.io.IOUtils.toByteArray;
 
 import net.vpc.common.gomail.*;
 import net.vpc.common.gomail.util.GoMailUtils;
+import net.vpc.common.io.IOUtils;
 
 import static net.vpc.common.gomail.modules.GoMailModuleProcessor.loadBodyString;
 import static net.vpc.common.gomail.modules.GoMailModuleProcessor.resolveBodySource;
@@ -167,7 +167,7 @@ public class DefaultGoMailAgent implements GoMailAgent {
             if (GoMailUtils.isTextHtmlContentType(p.getContentType())) {
                 return loadBodyString(p, expr);
             }
-            return new ByteArrayDataSource(toByteArray(((URL) o).openStream()), p.getContentType());
+            return new ByteArrayDataSource(IOUtils.loadByteArray(((URL) o).openStream()), p.getContentType());
         } else if (o instanceof byte[]) {
             if (GoMailUtils.isTextPlainContentType(p.getContentType())) {
                 return loadBodyString(p, expr);

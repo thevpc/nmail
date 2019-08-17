@@ -666,7 +666,7 @@ public class GoMailModuleSerializer {
 
     public GoMailFormat getGoMailFormat(InputStream stream) {
         try {
-            byte[] footprint = IOUtils.read(stream, 1024);
+            byte[] footprint = IOUtils.loadByteArray(stream);
             //trytext
             {
                 String s = new String(footprint);
