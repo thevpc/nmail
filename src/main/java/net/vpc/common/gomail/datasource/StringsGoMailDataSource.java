@@ -5,6 +5,7 @@
  */
 package net.vpc.common.gomail.datasource;
 
+import net.vpc.common.gomail.util.ExprList;
 import net.vpc.common.gomail.util.SerializedForm;
 
 /**
@@ -48,7 +49,10 @@ public class StringsGoMailDataSource extends AbstractGoMailDataSource {
         sb.append(']');
 
         sb.append('}');
-        return new SerializedForm("strings",sb.toString());
+        return new SerializedForm(new ExprList().addAll(
+            ExprList.createKeyValue("type","strings"),
+            ExprList.createKeyValue("value",sb.toString())
+        ));
     }
 
     private String escape(String s) {

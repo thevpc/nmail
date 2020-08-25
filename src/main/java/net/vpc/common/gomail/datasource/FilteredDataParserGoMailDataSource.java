@@ -6,11 +6,13 @@
 package net.vpc.common.gomail.datasource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import net.vpc.common.gomail.GoMailContext;
 import net.vpc.common.gomail.GoMailDataSource;
 import net.vpc.common.gomail.GoMailDataSourceRow;
 import net.vpc.common.gomail.modules.GoMailModuleSerializer;
+import net.vpc.common.gomail.util.ExprList;
 import net.vpc.common.gomail.util.SerializedForm;
 import net.vpc.upa.QLExpressionParser;
 import net.vpc.upa.UPA;
@@ -29,7 +31,7 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
     private GoMailDataSource dataSource;
 //    private Map<String, XMailDataSource> dataSources;
 
-    protected FilteredDataParserGoMailDataSource(String source) {
+    public FilteredDataParserGoMailDataSource(String source) {
         super(source);
 //        this.filter = filter;
 //        this.dataSources = dataSources;
@@ -39,7 +41,12 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
     public SerializedForm serialize() {
 //        XMailDataSource ss = (XMailDataSource) getSource();
         //"'" + ss.serialize() + "' where " + filter.serialize()
-        return new SerializedForm(getClass().getName(), getSource().toString());
+        return new SerializedForm(
+                new ExprList().addAll(
+                    ExprList.createKeyValue("type", getClass().getName()),
+                    ExprList.createKeyValue("value", getSource().toString())
+                )
+        );
     }
 
     public static FilteredDataParserGoMailDataSource valueOf(SerializedForm s) {
@@ -76,18 +83,20 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
         if (en == null && ea != null) {
             dataSource = context.getRegisteredDataSources().get(ea);
             if (dataSource == null) {
-                dataSource = GoMailModuleSerializer.deserializeDataSource(ea);
+                dataSource = GoMailModuleSerializer.deserializeDataSource(ea, null);
             }
         } else if (en != null && ea == null) {
             dataSource = context.getRegisteredDataSources().get(en);
             if (dataSource == null) {
-                dataSource = GoMailModuleSerializer.deserializeDataSource(en);
+                dataSource = GoMailModuleSerializer.deserializeDataSource(en, null);
             }
         } else {
-            dataSource = GoMailModuleSerializer.deserializeDataSource(en, ea);
+            dataSource = GoMailModuleSerializer.deserializeDataSource(en, /*ea,*/ null);
         }
 //        expr.from((NameOrSelect) null, null);
-        filter = GoMailModuleSerializer.deserializeDataSourceFilter(expr.toString());
+        filter = GoMailModuleSerializer.deserializeDataSourceFilter(new ExprList()
+                .add(ExprList.createKeyValue("value", expr.toString()))
+        );
     }
 
     private void parse() {

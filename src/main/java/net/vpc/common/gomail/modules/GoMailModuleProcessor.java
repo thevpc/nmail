@@ -56,7 +56,7 @@ public class GoMailModuleProcessor {
 //        this.config = new GoMailConfig(loader);
 //    }
 
-    public GoMailModuleProcessor(GoMailAgent agent, GoMailConfig config) throws IOException {
+    public GoMailModuleProcessor(GoMailAgent agent, GoMailConfig config)  {
         this.agent = agent == null ? DefaultGoMailFactory.INSTANCE.createAgent() : agent;
         this.config = config == null ? new GoMailConfig(null) : config;
     }
@@ -81,7 +81,7 @@ public class GoMailModuleProcessor {
         this.config = config;
     }
 
-    public int sendMessage(GoMail mail, Properties roProperties, final GoMailListener listener) throws IOException {
+    public int sendMessage(GoMail mail, Properties roProperties, final GoMailListener listener) {
         if (roProperties == null) {
             roProperties = System.getProperties();
         }
@@ -97,22 +97,22 @@ public class GoMailModuleProcessor {
 //        return listener2.count;
     }
 
-    private int sendExpandableMail(final GoMail mail, Properties roProperties, GoMailListener listener) throws IOException {
+    private int sendExpandableMail(final GoMail mail, Properties roProperties, GoMailListener listener) {
 
         final Properties rwProperties = new Properties();
         final Properties specialProperties = new Properties();
         rwProperties.putAll(mail.getProperties());
         prepareMailProperies(mail, rwProperties, roProperties);
         final GoMailProperties props = new DefaultProps(rwProperties, roProperties, specialProperties);
-        final GoMailContext expr = new DefaultGoMailContext(mail.namedDataSources(), props, row0);
+        final GoMailContext ctx = new DefaultGoMailContext(mail.namedDataSources(), props, row0);
         int total = 0;
         for (GoMailDataSource value : mail.namedDataSources().values()) {
-            value.build(expr);
+            value.build(ctx);
         }
 
         GoMailDataSource repeatDataSource = mail.repeatDataSource();
         if (repeatDataSource != null) {
-            repeatDataSource.build(expr);
+            repeatDataSource.build(ctx);
         }
         if (repeatDataSource == null) {
             total += sendExpandableMailForRow(mail, row0, roProperties, listener);
@@ -126,7 +126,7 @@ public class GoMailModuleProcessor {
         return total;
     }
 
-    private int sendExpandableMailForRow(final GoMail mail, final GoMailDataSourceRow r, final Properties roProperties, GoMailListener listener) throws IOException {
+    private int sendExpandableMailForRow(final GoMail mail, final GoMailDataSourceRow r, final Properties roProperties, GoMailListener listener) {
         int count = 0;
         final Properties rwProperties = new Properties();
         final Properties specialProperties = new Properties();
@@ -377,7 +377,7 @@ public class GoMailModuleProcessor {
         }
     }
 
-    private int sendMessage(GoMailMessage mail, Properties roProperties, GoMailContext expr, GoMailListener listener) throws IOException {
+    private int sendMessage(GoMailMessage mail, Properties roProperties, GoMailContext expr, GoMailListener listener) {
         if (listener != null) {
             listener.onBeforeSend(mail);
         }

@@ -2,9 +2,9 @@
 <!DOCTYPE MODES SYSTEM "catalog.dtd">
 
 <MODES>
-<MODE NAME="xmail" FILE="xmail-mode.xml"
-        FILE_NAME_GLOB="*.xmail"
-        FIRST_LINE_GLOB="#mimetype=application/xmail*" />
+<MODE NAME="gomail" FILE="gomail.xml"
+        FILE_NAME_GLOB="*.gomail"
+        FIRST_LINE_GLOB="#mimetype=application/gomail*" />
 <!-- Add lines like the following, one for each edit mode you add: -->
 <!-- <MODE NAME="foo" FILE="foo.xml" FILE_NAME_GLOB="*.foo" /> -->
 

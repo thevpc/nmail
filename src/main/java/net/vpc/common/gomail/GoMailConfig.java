@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,12 +32,8 @@ public class GoMailConfig {
     private static GoMailConfig defaultInstance;
 
     public static GoMailConfig getDefaultInstance() {
-        if(defaultInstance==null){
-            try {
-                defaultInstance=new GoMailConfig(null);
-            } catch (IOException e) {
-                throw new RuntimeException("Error Loading config",e);
-            }
+        if (defaultInstance == null) {
+            defaultInstance = new GoMailConfig(null);
         }
         return defaultInstance;
     }
@@ -45,117 +42,120 @@ public class GoMailConfig {
 
     }
 
-    public GoMailConfig(ClassLoader loader) throws IOException {
+    public GoMailConfig(ClassLoader loader) {
         load(loader);
     }
 
-    public void load(ClassLoader loader) throws IOException {
+    public void load(ClassLoader loader) {
         load("net/vpc/common/gomail/gomail.properties", loader);
     }
 
-    public void load(String url, ClassLoader loader) throws IOException {
+    public void load(String url, ClassLoader loader) {
         if (loader == null) {
             loader = Thread.currentThread().getContextClassLoader();
         }
-        for (URL u : Collections.list(loader.getResources(url))) {
-            InputStream s = null;
-            try {
-                s = u.openStream();
-                loadStream(s, true);
-            } finally {
-                if (s != null) {
-                    s.close();
+        try {
+            for (URL u : Collections.list(loader.getResources(url))) {
+                try (InputStream s = u.openStream()) {
+                    loadStream(s, true);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
                 }
             }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
-    private void loadStream(InputStream in, boolean lenient) throws IOException {
-        BufferedReader r = new BufferedReader(new InputStreamReader(in));
-        String line = null;
-        final int ANY = 1;
-        final int SECTION = 2;
-        int status = ANY;
-        int priority = 0;
-        String regexp = null;
-        StringBuilder sb = new StringBuilder();
-        while ((line = r.readLine()) != null) {
-            switch (status) {
-                case ANY: {
-                    line = line.trim();
-                    if (line.length() > 0) {
-                        if (line.startsWith("#")) {
-                            if (line.matches("#pragma\\s+.*")) {
-                                String[] t = loadLineProperty(line.substring("#pragma".length() + 1));
-                                if (t != null) {
-                                    if (t[0].equals("priority")) {
-                                        try {
-                                            priority = Integer.parseInt(t[1]);
-                                        } catch (NumberFormatException e) {
-                                            if (lenient) {
-                                                log.severe("Unvalid priority "+t[1]+" : "+e.getMessage());
-                                            } else {
-                                                throw e;
+    private void loadStream(InputStream in, boolean lenient) {
+        try {
+            BufferedReader r = new BufferedReader(new InputStreamReader(in));
+            String line = null;
+            final int ANY = 1;
+            final int SECTION = 2;
+            int status = ANY;
+            int priority = 0;
+            String regexp = null;
+            StringBuilder sb = new StringBuilder();
+            while ((line = r.readLine()) != null) {
+                switch (status) {
+                    case ANY: {
+                        line = line.trim();
+                        if (line.length() > 0) {
+                            if (line.startsWith("#")) {
+                                if (line.matches("#pragma\\s+.*")) {
+                                    String[] t = loadLineProperty(line.substring("#pragma".length() + 1));
+                                    if (t != null) {
+                                        if (t[0].equals("priority")) {
+                                            try {
+                                                priority = Integer.parseInt(t[1]);
+                                            } catch (NumberFormatException e) {
+                                                if (lenient) {
+                                                    log.severe("Unvalid priority " + t[1] + " : " + e.getMessage());
+                                                } else {
+                                                    throw e;
+                                                }
                                             }
+                                        } else if (lenient) {
+                                            log.severe("Pragma " + t[0] + " not supported");
+                                        } else {
+                                            throw new IllegalArgumentException("Pragma " + t[0] + " not supported");
                                         }
-                                    } else if (lenient) {
-                                        log.severe("Pragma " + t[0] + " not supported");
-                                    } else {
-                                        throw new IllegalArgumentException("Pragma " + t[0] + " not supported");
                                     }
                                 }
-                            }
-                        } else if (line.startsWith("[")) {
-                            if (line.endsWith("]")) {
-                                regexp = line.substring(1, line.length() - 1);
-                                status = SECTION;
+                            } else if (line.startsWith("[")) {
+                                if (line.endsWith("]")) {
+                                    regexp = line.substring(1, line.length() - 1);
+                                    status = SECTION;
+                                } else if (lenient) {
+                                    regexp = line.substring(1, line.length());
+                                    status = SECTION;
+                                    log.severe("Expected Section [...]");
+                                } else {
+                                    throw new IllegalArgumentException("Expected Section [...]");
+                                }
                             } else if (lenient) {
-                                regexp = line.substring(1, line.length());
-                                status = SECTION;
                                 log.severe("Expected Section [...]");
                             } else {
                                 throw new IllegalArgumentException("Expected Section [...]");
                             }
-                        } else if (lenient) {
-                            log.severe("Expected Section [...]");
-                        } else {
-                            throw new IllegalArgumentException("Expected Section [...]");
                         }
+                        break;
                     }
-                    break;
-                }
-                case SECTION: {
-                    if (line.startsWith("[")) {
-                        //consume
-                        GoMailPropertiesSection sec = new GoMailPropertiesSection();
-                        sec.setFilterRegexp(regexp);
-                        sec.setPragmaPriority(priority);
-                        sec.setProperties(loadProperties(sb.toString()));
-                        sections.add(sec);
-                        //reset
-                        regexp = null;
-                        priority = 0;
-                        sb.delete(0, sb.length());
+                    case SECTION: {
+                        if (line.startsWith("[")) {
+                            //consume
+                            GoMailPropertiesSection sec = new GoMailPropertiesSection();
+                            sec.setFilterRegexp(regexp);
+                            sec.setPragmaPriority(priority);
+                            sec.setProperties(loadProperties(sb.toString()));
+                            sections.add(sec);
+                            //reset
+                            regexp = null;
+                            priority = 0;
+                            sb.delete(0, sb.length());
 
-                        //
-                        regexp = line.substring(1, line.length() - 1);
-                        status = SECTION;
-                    } else {
-                        sb.append(line).append("\n");
+                            //
+                            regexp = line.substring(1, line.length() - 1);
+                            status = SECTION;
+                        } else {
+                            sb.append(line).append("\n");
+                        }
+                        break;
                     }
-                    break;
                 }
             }
+            if (regexp != null) {
+                //consume
+                GoMailPropertiesSection sec = new GoMailPropertiesSection();
+                sec.setFilterRegexp(regexp);
+                sec.setPragmaPriority(priority);
+                sec.setProperties(loadProperties(sb.toString()));
+                sections.add(sec);
+            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
-        if (regexp != null) {
-            //consume
-            GoMailPropertiesSection sec = new GoMailPropertiesSection();
-            sec.setFilterRegexp(regexp);
-            sec.setPragmaPriority(priority);
-            sec.setProperties(loadProperties(sb.toString()));
-            sections.add(sec);
-        }
-
     }
 
     private String[] loadLineProperty(String line) {

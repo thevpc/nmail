@@ -17,11 +17,11 @@ import java.io.IOException;
 public class DefaultGoMailFactory implements  GoMailFactory{
     public static final GoMailFactory INSTANCE=new DefaultGoMailFactory();
 
-    public GoMailModuleProcessor createProcessor() throws IOException{
+    public GoMailModuleProcessor createProcessor() {
         return createProcessor(null,null);
     }
 
-    public GoMailModuleProcessor createProcessor(GoMailAgent agent,GoMailConfig config) throws IOException{
+    public GoMailModuleProcessor createProcessor(GoMailAgent agent,GoMailConfig config) {
         if(config==null){
             config=GoMailConfig.getDefaultInstance(); //configure with context class loader
         }
@@ -32,7 +32,7 @@ public class DefaultGoMailFactory implements  GoMailFactory{
     }
 
     @Override
-    public GoMailAgent createAgent() throws IOException {
+    public GoMailAgent createAgent() {
         return SplitRecipientsGoMailAgent.INSTANCE;
     }
 }

@@ -20,20 +20,52 @@ import java.util.logging.Logger;
  */
 public class SerializedForm implements Serializable {
 
-    private String type;
-    private String value;
+//    private String type;
+//    private String value;
+    private ExprList args;
 
-    public SerializedForm(String type, String value) {
-        this.type = type;
-        this.value = value;
+//    public SerializedForm(String type, String value) {
+//        this.type = type;
+//        this.value = value;
+//    }
+    public SerializedForm(ExprList args) {
+        this.args = args;
+    }
+
+    public ExprList getArgs() {
+        return args;
     }
 
     public String getType() {
-        return type;
+        for (ExprList.Expr arg : args.toList()) {
+            ExprList.KeyValExpr t = arg.toKeyValExpr();
+            if (t != null && t.getKey().toWordExpr() != null && "type".equals(t.getKey().toWordExpr().getValue())) {
+                if (t.getValue().toStringExpr() != null) {
+                    return t.getValue().toStringExpr().getValue();
+                } else if (t.getValue().toWordExpr() != null) {
+                    return t.getValue().toWordExpr().getValue();
+                }
+            }
+        }
+        return null;
     }
 
     public String getValue() {
-        return value;
+        ExprList.Expr t = args.getValue("value");
+        if (t != null) {
+            if (t.toStringExpr() != null) {
+                return t.toStringExpr().getValue();
+            } else if (t.toWordExpr() != null) {
+                return t.toWordExpr().getValue();
+            }
+        }
+        for (ExprList.Expr arg : args.toList()) {
+            ExprList.StringExpr e = arg.toStringExpr();
+            if (e != null) {
+                return e.getValue();
+            }
+        }
+        return null;
     }
 
     public <T> T instantiate(SerializedFormConfig config, Class<T> expectedType) {

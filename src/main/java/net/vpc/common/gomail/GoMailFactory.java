@@ -18,23 +18,20 @@ public interface GoMailFactory {
      * create mail processor with default agent and config.
      * equivalent to <pre>createProcessor(null,null)</pre>
      * @return
-     * @throws IOException
      */
-    public GoMailModuleProcessor createProcessor() throws IOException;
+    public GoMailModuleProcessor createProcessor() ;
 
     /**
      * create mail processor.
      * @param agent mail agent, if null createAgent() is called
      * @param config mail config, if null GoMailConfig.getDefaultInstance() is called
      * @return
-     * @throws IOException
      */
-    public GoMailModuleProcessor createProcessor(GoMailAgent agent,GoMailConfig config) throws IOException;
+    public GoMailModuleProcessor createProcessor(GoMailAgent agent,GoMailConfig config) ;
 
     /**
      * create mail config
      * @return mail agent instance, default is SplitRecipientsGoMailAgent.INSTANCE
-     * @throws IOException
      */
-    public GoMailAgent createAgent() throws IOException;
+    public GoMailAgent createAgent();
 }

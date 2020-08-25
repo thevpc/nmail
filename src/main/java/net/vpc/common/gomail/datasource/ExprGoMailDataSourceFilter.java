@@ -8,6 +8,7 @@ package net.vpc.common.gomail.datasource;
 import java.util.Objects;
 import net.vpc.common.gomail.GoMailContext;
 import net.vpc.common.gomail.GoMailDataSourceRow;
+import net.vpc.common.gomail.util.ExprList;
 import net.vpc.common.gomail.util.RowExprEvaluator;
 import net.vpc.common.gomail.util.SerializedForm;
 import net.vpc.upa.QLExpressionParser;
@@ -32,7 +33,11 @@ public class ExprGoMailDataSourceFilter implements GoMailDataSourceFilter {
 
     @Override
     public SerializedForm serialize() {
-        return new SerializedForm(ExprGoMailDataSourceFilter.class.getName(), expression);
+        return new SerializedForm(
+                new ExprList().addAll(
+                    ExprList.createKeyValue("type", ExprGoMailDataSourceFilter.class.getName()),
+                    ExprList.createKeyValue("value", expression)
+                ));
     }
 
     public static ExprGoMailDataSourceFilter valueOf(SerializedForm serializedForm) {

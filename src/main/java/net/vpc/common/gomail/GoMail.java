@@ -7,20 +7,20 @@ package net.vpc.common.gomail;
 
 import net.vpc.common.gomail.modules.GoMailModuleSerializer;
 import java.io.File;
-import java.io.IOException;
+import java.io.Reader;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
 import net.vpc.common.io.FileUtils;
-import net.vpc.common.io.IOUtils;
 
 /**
  *
  * @author taha.bensalah@gmail.com
  */
 public class GoMail implements Serializable, Cloneable {
+
     public static final String TEXT_CONTENT_TYPE = "text/plain;charset=UTF-8";
     public static final String HTML_CONTENT_TYPE = "text/html;charset=UTF-8";
     public static final String BYTES_CONTENT_TYPE = "application/octet-stream";
@@ -37,6 +37,17 @@ public class GoMail implements Serializable, Cloneable {
     private GoMailDataSource repeatDataSource;
     private Map<String, GoMailDataSource> namedDataSources = new HashMap<>();
     private boolean expandable = true;
+
+    public static GoMail load(Reader reader) {
+        return new GoMailModuleSerializer().read(reader);
+    }
+
+    public static GoMail load(File file) {
+        if (file.getName().endsWith("gomail")) {
+            return new GoMailModuleSerializer().read(GoMailFormat.TEXT, file);
+        }
+        throw new IllegalArgumentException("Unsupported file " + file.getAbsolutePath() + ". accepted extensions are *.gomail");
+    }
 
     public GoMail copy() {
         try {
@@ -58,8 +69,9 @@ public class GoMail implements Serializable, Cloneable {
         return simulate;
     }
 
-    public void setSimulate(boolean simulate) {
+    public GoMail setSimulate(boolean simulate) {
         this.simulate = simulate;
+        return this;
     }
 
     public GoMail body(Object value, String type) {
@@ -131,42 +143,47 @@ public class GoMail implements Serializable, Cloneable {
         return subject;
     }
 
-    public void subject(String subject) {
+    public GoMail subject(String subject) {
         this.subject = subject;
+        return this;
     }
 
     public String from() {
         return from;
     }
 
-    public void from(String from) {
+    public GoMail from(String from) {
         this.from = from;
+        return this;
     }
 
-    public void setTo(Set<String> s) {
-        if(s==null){
-            this.to=new HashSet<>();
-        }else{
-            this.to=new HashSet<>(s);
+    public GoMail setTo(Set<String> s) {
+        if (s == null) {
+            this.to = new HashSet<>();
+        } else {
+            this.to = new HashSet<>(s);
         }
+        return this;
     }
-    
-    public void setCc(Set<String> s) {
-        if(s==null){
-            this.cc=new HashSet<>();
-        }else{
-            this.cc=new HashSet<>(s);
+
+    public GoMail setCc(Set<String> s) {
+        if (s == null) {
+            this.cc = new HashSet<>();
+        } else {
+            this.cc = new HashSet<>(s);
         }
+        return this;
     }
-    
-    public void setBcc(Set<String> s) {
-        if(s==null){
-            this.bcc=new HashSet<>();
-        }else{
-            this.bcc=new HashSet<>(s);
+
+    public GoMail setBcc(Set<String> s) {
+        if (s == null) {
+            this.bcc = new HashSet<>();
+        } else {
+            this.bcc = new HashSet<>(s);
         }
+        return this;
     }
-    
+
     public Set<String> getTo() {
         return to();
     }
@@ -196,7 +213,7 @@ public class GoMail implements Serializable, Cloneable {
     }
 
     public List<Recipient> recipients() {
-        List<Recipient> all=new ArrayList<>();
+        List<Recipient> all = new ArrayList<>();
         for (String s : to) {
             all.add(new Recipient(RecipientType.TO, s));
         }
@@ -220,108 +237,108 @@ public class GoMail implements Serializable, Cloneable {
     }
 
     public GoMail addRecipient(Recipient recipient) {
-        return addRecipient(recipient.getType(),recipient.getValue());
+        return addRecipient(recipient.getType(), recipient.getValue());
     }
 
-    public GoMail addRecipient(RecipientType type,String recipient) {
-        switch (type){
-            case TO:{
+    public GoMail addRecipient(RecipientType type, String recipient) {
+        switch (type) {
+            case TO: {
                 to(recipient);
                 break;
             }
-            case CC:{
+            case CC: {
                 cc(recipient);
                 break;
             }
-            case BCC:{
+            case BCC: {
                 bcc(recipient);
                 break;
             }
-            case TOEACH:{
+            case TOEACH: {
                 toeach(recipient);
                 break;
             }
-            default:{
-                throw new IllegalArgumentException("Unsupported recipientType "+type);
+            default: {
+                throw new IllegalArgumentException("Unsupported recipientType " + type);
             }
         }
         return this;
     }
 
-    public GoMail addRecipients(RecipientType recipientType,String... others) {
-        switch (recipientType){
-            case TO:{
+    public GoMail addRecipients(RecipientType recipientType, String... others) {
+        switch (recipientType) {
+            case TO: {
                 to(others);
                 break;
             }
-            case TOEACH:{
+            case TOEACH: {
                 toeach(others);
                 break;
             }
-            case CC:{
+            case CC: {
                 cc(others);
                 break;
             }
-            case BCC:{
+            case BCC: {
                 bcc(others);
                 break;
             }
-            default:{
-                throw new IllegalArgumentException("Unsupported recipientType "+recipientType);
+            default: {
+                throw new IllegalArgumentException("Unsupported recipientType " + recipientType);
             }
         }
         return this;
     }
 
-    public GoMail setRecipients(RecipientType recipientType,String... others) {
-        return setRecipients(recipientType,Arrays.asList(others));
+    public GoMail setRecipients(RecipientType recipientType, String... others) {
+        return setRecipients(recipientType, Arrays.asList(others));
     }
 
-    public GoMail setRecipients(RecipientType recipientType,Collection<String> others) {
-        switch (recipientType){
-            case TO:{
+    public GoMail setRecipients(RecipientType recipientType, Collection<String> others) {
+        switch (recipientType) {
+            case TO: {
                 to().clear();
                 to(others);
                 break;
             }
-            case CC:{
+            case CC: {
                 cc().clear();
                 cc(others);
                 break;
             }
-            case BCC:{
+            case BCC: {
                 bcc().clear();
                 bcc(others);
                 break;
             }
-            case TOEACH:{
+            case TOEACH: {
                 toeach().clear();
                 toeach(others);
                 break;
             }
-            default:{
-                throw new IllegalArgumentException("Unsupported recipientType "+recipientType);
+            default: {
+                throw new IllegalArgumentException("Unsupported recipientType " + recipientType);
             }
         }
         return this;
     }
 
     public Set<String> getRecipients(RecipientType recipientType) {
-        switch (recipientType){
-            case TO:{
+        switch (recipientType) {
+            case TO: {
                 return to();
             }
-            case CC:{
+            case CC: {
                 return cc();
             }
-            case BCC:{
+            case BCC: {
                 return bcc();
             }
-            case TOEACH:{
+            case TOEACH: {
                 return toeach();
             }
         }
-        throw new IllegalArgumentException("Unsupported recipientType "+recipientType);
+        throw new IllegalArgumentException("Unsupported recipientType " + recipientType);
     }
 
     public GoMail to(String... others) {
@@ -343,15 +360,18 @@ public class GoMail implements Serializable, Cloneable {
         to.addAll(others);
         return this;
     }
+
     public GoMail cc(Collection<String> others) {
         cc.addAll(others);
         return this;
     }
+
     public GoMail bcc(Collection<String> others) {
         bcc.addAll(others);
         return this;
     }
-    public void setProperty(String name, String value) {
+
+    public GoMail setProperty(String name, String value) {
         if (name != null) {
             if (value == null) {
                 getProperties().remove(name);
@@ -359,12 +379,12 @@ public class GoMail implements Serializable, Cloneable {
                 getProperties().setProperty(name, value);
             }
         }
-    }
+        return this;
+   }
 
     public Properties getProperties() {
         return properties;
     }
-
 
     public boolean isExpandable() {
         return expandable;
@@ -379,13 +399,13 @@ public class GoMail implements Serializable, Cloneable {
         return this;
     }
 
-
-    public void setToEach(Set<String> s) {
-        if(s==null){
-            this.cto=new HashSet<>();
-        }else{
-            this.cto=new HashSet<>(s);
+    public GoMail setToEach(Set<String> s) {
+        if (s == null) {
+            this.cto = new HashSet<>();
+        } else {
+            this.cto = new HashSet<>(s);
         }
+        return this;
     }
 
     public Set<String> toeach() {
@@ -405,11 +425,12 @@ public class GoMail implements Serializable, Cloneable {
         return repeatDataSource;
     }
 
-    public void repeatDatasource(GoMailDataSource dataSource) {
+    public GoMail repeatDatasource(GoMailDataSource dataSource) {
         this.repeatDataSource = dataSource;
+        return this;
     }
 
-    public void setCredentials(String user, String password) {
+    public GoMail setCredentials(String user, String password) {
         if (user != null && user.length() == 0) {
             user = null;
         }
@@ -418,6 +439,7 @@ public class GoMail implements Serializable, Cloneable {
         }
         setProperty("app.mail.user", user);
         setProperty("app.mail.password", password);
+        return this;
     }
 
     @Override
@@ -493,7 +515,11 @@ public class GoMail implements Serializable, Cloneable {
         return true;
     }
 
-    public void send() throws IOException {
-        DefaultGoMailFactory.INSTANCE.createProcessor().sendMessage(this, null, null);
+    public void send() {
+        send(null);
+    }
+
+    public void send(GoMailListener listener) {
+        DefaultGoMailFactory.INSTANCE.createProcessor().sendMessage(this, null, listener);
     }
 }

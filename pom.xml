@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.vpc.common</groupId>
     <artifactId>gomail</artifactId>
-    <version>1.2.7</version> <!--updated -->
+    <version>1.2.8</version> <!--updated -->
     <packaging>jar</packaging>
     <name>net.vpc.common.gomail</name>
     <url>https://github.com/thevpc/upa/wiki</url>
@@ -41,8 +41,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <github.global.server>github</github.global.server>
     </properties>
 

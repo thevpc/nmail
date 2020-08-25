@@ -12,6 +12,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import net.vpc.common.gomail.util.ExprList;
 import net.vpc.common.gomail.util.SerializedForm;
 import net.vpc.upa.bulk.DataColumn;
 import net.vpc.upa.bulk.DataReader;
@@ -35,22 +36,30 @@ public abstract class AbstractDataParserGoMailDataSource extends AbstractGoMailD
     public SerializedForm serialize() {
         String u = null;
         Object source = getSource();
+        String valueType = "unknown";
         if (source instanceof File) {
             try {
                 u = ((File) source).toURI().toURL().toString();
             } catch (MalformedURLException ex) {
                 throw new IllegalArgumentException(ex);
             }
+            valueType = "file";
         } else if (source instanceof URL) {
             u = ((URL) source).toString();
+            valueType = "url";
         } else if (source instanceof String) {
             u = ((String) source);
+            valueType = "string";
         } else if (source instanceof byte[]) {
             u = Base64.getEncoder().encodeToString(((byte[]) source));
+            valueType = "bytes";
         } else {
             throw new IllegalArgumentException("Unable to serialize " + source);
         }
-        return new SerializedForm(getClass().getName(), u);
+        return new SerializedForm(new ExprList().addAll(
+            ExprList.createKeyValue("type", getClass().getName()),
+            ExprList.createKeyValue("value", u),
+            ExprList.createKeyValue("valueType", valueType)));
     }
 
     protected abstract DataReader createDataTable() throws IOException;

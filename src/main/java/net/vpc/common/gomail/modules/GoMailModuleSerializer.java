@@ -21,8 +21,12 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -31,6 +35,7 @@ import java.util.logging.Logger;
 import net.vpc.common.gomail.datasource.ExprGoMailDataSourceFilter;
 import net.vpc.common.gomail.datasource.GoMailDataSourceFilter;
 import net.vpc.common.gomail.datasource.FilteredDataParserGoMailDataSource;
+import net.vpc.common.gomail.util.ExprList;
 import net.vpc.common.gomail.util.GoMailUtils;
 import net.vpc.common.io.IOUtils;
 import net.vpc.common.io.InputStreamSource;
@@ -46,27 +51,28 @@ import net.vpc.common.strings.StringUtils;
  */
 public class GoMailModuleSerializer {
 
-    public static final String SER_HEADER = "#mimetype=application/go-mail";
+    public static final String SER_HEADER = "#mimetype=application/gomail";
 
     public static final SerializedFormConfig GoMailDataSourceSerializedFormConfig
             = new SerializedFormConfig()
-            .addAlias("sheet", SheetGoMailDataSource.class.getName())
-            .addAlias("array", StringsGoMailDataSource.class.getName())
-            .addAlias("fixed", FixedWidthGoMailDataSource.class.getName())
-            .addAlias("csv", CSVGoMailDataSource.class.getName())
-            .addAlias("xml", XMLGoMailDataSource.class.getName())
-            .addAlias("default", FilteredDataParserGoMailDataSource.class.getName())
-            .addImport(GoMailDataSource.class.getPackage().getName());
+                    .addAlias("sheet", SheetGoMailDataSource.class.getName())
+                    .addAlias("array", StringsGoMailDataSource.class.getName())
+                    .addAlias("fixed", FixedWidthGoMailDataSource.class.getName())
+                    .addAlias("csv", CSVGoMailDataSource.class.getName())
+                    .addAlias("xml", XMLGoMailDataSource.class.getName())
+                    .addAlias("default", FilteredDataParserGoMailDataSource.class.getName())
+                    .addImport(GoMailDataSource.class.getPackage().getName());
 
     public static final SerializedFormConfig GoMailDataSourcefilterSerializedFormConfig
             = new SerializedFormConfig()
-            .addAlias("expr", ExprGoMailDataSourceFilter.class.getName())
-            .addAlias("default", ExprGoMailDataSourceFilter.class.getName())
-            .addImport(ExprGoMailDataSourceFilter.class.getPackage().getName());
+                    .addAlias("expr", ExprGoMailDataSourceFilter.class.getName())
+                    .addAlias("default", ExprGoMailDataSourceFilter.class.getName())
+                    .addImport(ExprGoMailDataSourceFilter.class.getPackage().getName());
 
     public void write(GoMail mail, GoMailFormat format, File file) throws IOException {
         write(mail, format, IOUtils.toOutputStreamSource(file));
     }
+
     public void write(GoMailMessage mail, GoMailFormat format, File file) throws IOException {
         write(mail, format, IOUtils.toOutputStreamSource(file));
     }
@@ -80,6 +86,7 @@ public class GoMailModuleSerializer {
             throw new RuntimeException(ex);
         }
     }
+
     public String gomailToString(GoMailMessage mail) {
         try {
             ByteArrayOutputStream s = new ByteArrayOutputStream();
@@ -128,6 +135,7 @@ public class GoMailModuleSerializer {
         }
         throw new IllegalArgumentException("Unsupported");
     }
+
     public void write(GoMailMessage mail, GoMailFormat format, OutputStream stream) throws IOException {
         switch (format) {
             case TEXT: {
@@ -138,14 +146,12 @@ public class GoMailModuleSerializer {
         throw new IllegalArgumentException("Unsupported");
     }
 
-    public GoMail read(GoMailFormat format, File file) throws IOException {
+    public GoMail read(GoMailFormat format, File file) {
         return read(format, IOUtils.toInputStreamSource(file));
     }
 
-    public GoMail read(GoMailFormat format, InputStreamSource source) throws IOException {
-        InputStream in = null;
-        try {
-            in = source.open();
+    public GoMail read(GoMailFormat format, InputStreamSource source) {
+        try (InputStream in = source.open()) {
             GoMail m = read(format, in);
             Object f = source.getSource();
             PathInfo pathInfo = PathInfo.create(f);
@@ -161,14 +167,12 @@ public class GoMailModuleSerializer {
                 }
             }
             return m;
-        } finally {
-            if (in != null) {
-                in.close();
-            }
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
-    public GoMail read(GoMailFormat format, InputStream stream) throws IOException {
+    public GoMail read(GoMailFormat format, InputStream stream) {
         switch (format) {
             case TEXT: {
                 return readText(new BufferedReader(new InputStreamReader(stream)));
@@ -177,159 +181,200 @@ public class GoMailModuleSerializer {
         throw new IllegalArgumentException("Unsupported");
     }
 
-    private GoMail readText(BufferedReader reader) throws IOException {
-        String line = reader.readLine();
-        if (!SER_HEADER.equals((line == null ? "" : line).trim())) {
-            throw new IllegalArgumentException("Expected " + SER_HEADER);
-        }
-        GoMail m = new GoMail();
-        String pushbackLine = null;
-        while (true) {
-            line = pushbackLine == null ? reader.readLine() : pushbackLine;
-            pushbackLine = null;
-            if (line != null) {
-                line = line.trim();
-                if (!line.startsWith("#") && line.length() > 0) {
-                    String[] u = line.toLowerCase().split("(:| )+");
-                    if (u.length > 1) {
-                        String cmd = u[0];
-                        int i = StringUtils.indexOfRegexpEnd(line, "(:| )+");
-                        String propValue = line.substring(i).trim();
-                        if (cmd.equals("from")) {
-                            m.from(lineUnEscape(propValue));
-                        } else if (cmd.equals("to")) {
-                            m.to(lineUnEscape(propValue));
-                        } else if (cmd.equals("toeach")) {
-                            m.toeach(lineUnEscape(propValue));
-                        } else if (cmd.equals("cc")) {
-                            m.cc(lineUnEscape(propValue));
-                        } else if (cmd.equals("bcc")) {
-                            m.bcc(lineUnEscape(propValue));
-                        } else if (cmd.equals("subject")) {
-                            m.subject(lineUnEscape(propValue));
-                        } else if (cmd.equals("property")) {
-                            int eq = propValue.indexOf('=');
-                            m.getProperties().put(
-                                    lineUnEscape(propValue.substring(0, eq)), lineUnEscape(propValue.substring(eq + 1))
-                            );
-                        } else if (cmd.equals("repeat")) {
-                            m.repeatDatasource(deserializeDataSource(propValue));
-                        } else if (cmd.equals("datasource")) {
-                            int dots = propValue.indexOf('=');
-                            if (dots <= 0) {
-                                throw new IllegalArgumentException("missing var name in datasource : " + propValue);
-                            }
-                            String name = lineUnEscape(propValue.substring(0, dots));
-                            String serVal = propValue.substring(dots + 1);
-                            m.namedDataSources().put(name, deserializeDataSource(serVal));
-                        } else if (cmd.equals("simulate")) {
-                            m.setSimulate(Boolean.valueOf(propValue));
-                        } else if (cmd.equals("object") || cmd.equals("attachment") || cmd.equals("footer") || cmd.equals("header")) {
-                            GoMailBodyPosition pos = GoMailBodyPosition.valueOf(cmd.toUpperCase());
-                            boolean expandable = true;
-                            String contentType = GoMail.HTML_CONTENT_TYPE;
-                            boolean path = false;
-//                            boolean content = true;
-                            boolean base64 = false;
-                            int order = 0;
-                            for (String pp : propValue.split(" +")) {
-                                pp = pp.trim();
-                                if (pp.length() > 0 && !pp.equals(";")) {
-                                    if (pp.equals("expandable")) {
-                                        expandable = true;
-                                    } else if (pp.equals("!expandable")) {
-                                        expandable = false;
-                                    } else if (pp.equals("path")) {
-                                        path = true;
-                                    } else if (pp.equals("base64")) {
-                                        base64 = true;
-                                    } else if (pp.startsWith("order=")) {
-                                        order = Integer.parseInt(pp.substring("order=".length()));
-                                    } else if (pp.contains("/")) {
-                                        contentType = pp;
-                                    } else {
-                                        throw new IllegalArgumentException("Unsupported " + pp);
-                                    }
+    public GoMail read(Reader stream) {
+        return readText(new BufferedReader(stream));
+    }
+
+    private GoMail readText(BufferedReader reader) {
+        try {
+            String line = reader.readLine();
+            if (!SER_HEADER.equals((line == null ? "" : line).trim())) {
+                throw new IllegalArgumentException("Expected " + SER_HEADER);
+            }
+            GoMail m = new GoMail();
+            String pushbackLine = null;
+            while (true) {
+                line = pushbackLine == null ? reader.readLine() : pushbackLine;
+                pushbackLine = null;
+                if (line != null) {
+                    line = line.trim();
+                    if (!line.startsWith("#") && line.length() > 0) {
+                        String[] u = line.toLowerCase().split("(:| )+");
+                        if (u.length > 1) {
+                            String cmd = u[0];
+                            int i = StringUtils.indexOfRegexpEnd(line, "(:| )+");
+                            String propValue = line.substring(i).trim();
+                            if (cmd.equals("from")) {
+                                m.from(lineUnEscape(propValue));
+                            } else if (cmd.equals("to")) {
+                                m.to(lineUnEscape(propValue));
+                            } else if (cmd.equals("toeach")) {
+                                m.toeach(lineUnEscape(propValue));
+                            } else if (cmd.equals("cc")) {
+                                m.cc(lineUnEscape(propValue));
+                            } else if (cmd.equals("bcc")) {
+                                m.bcc(lineUnEscape(propValue));
+                            } else if (cmd.equals("subject")) {
+                                m.subject(lineUnEscape(propValue));
+                            } else if (cmd.equals("user")) {
+                                m.getProperties().put("app.mail.user", propValue);
+                            } else if (cmd.equals("password")) {
+                                m.getProperties().put("app.mail.password", propValue);
+                            } else if (cmd.equals("ask-password")) {
+                                m.getProperties().put("app.mail.ask-password", propValue);
+                            } else if (cmd.equals("property")) {
+                                int eq = propValue.indexOf('=');
+                                m.getProperties().put(
+                                        lineUnEscape(propValue.substring(0, eq)), lineUnEscape(propValue.substring(eq + 1))
+                                );
+                            } else if (cmd.equals("repeat")) {
+                                m.repeatDatasource(new FilteredDataParserGoMailDataSource(propValue));
+                            } else if (cmd.equals("datasource")) {
+                                ExprList r = deserializeDataSourceArgs(propValue, reader);
+                                String name = resolveDataSourceName(r);
+                                if (name == null) {
+                                    name = "";
                                 }
-                            }
-                            if (path) {
-                                if (base64) {
-                                    throw new IllegalArgumentException("Cannot read path as base 64");
-                                } else {
-                                    String pathValue = null;
-                                    while (true) {
-                                        line = reader.readLine();
-                                        if (line == null) {
-                                            throw new IllegalArgumentException("Expected path");
-                                        } else if (line.trim().startsWith("#")) {
-                                            //ignore
+                                if (m.namedDataSources().containsKey(name)) {
+                                    //this is a filtered ds
+                                    throw new IllegalArgumentException("Datasource is already defined '" + name + "'");
+                                }
+                                GoMailDataSource d = deserializeDataSource(r);
+                                m.namedDataSources().put(name, d);
+                            } else if (cmd.equals("simulate")) {
+                                m.setSimulate(Boolean.valueOf(propValue));
+                            } else if (cmd.equals("object") || cmd.equals("attachment") || cmd.equals("footer") || cmd.equals("header")) {
+                                GoMailBodyPosition pos = GoMailBodyPosition.valueOf(cmd.toUpperCase());
+                                boolean expandable = true;
+                                String contentType = GoMail.HTML_CONTENT_TYPE;
+                                String charSet = "charset=UTF-8";
+                                boolean path = false;
+//                            boolean content = true;
+                                boolean base64 = false;
+                                int order = 0;
+                                for (String pp : propValue.split(" +")) {
+                                    pp = pp.trim();
+                                    if (pp.length() > 0 && !pp.equals(";")) {
+                                        if (pp.equals("expandable")) {
+                                            expandable = true;
+                                        } else if (pp.equals("!expandable")) {
+                                            expandable = false;
+                                        } else if (pp.equals("path")) {
+                                            path = true;
+                                        } else if (pp.equals("base64")) {
+                                            base64 = true;
+                                        } else if (pp.startsWith("order=")) {
+                                            order = Integer.parseInt(pp.substring("order=".length()));
+                                        } else if (pp.startsWith("charset=")) {
+                                            charSet = pp;
+                                        } else if (pp.contains("/")) {
+                                            contentType = pp;
                                         } else {
-                                            pathValue = line.trim();
-                                            break;
+                                            throw new IllegalArgumentException("Unsupported " + pp);
                                         }
                                     }
-                                    m.body(new URL(pathValue), contentType);
+                                }
+                                if (path) {
+                                    if (base64) {
+                                        throw new IllegalArgumentException("Cannot read path as base 64");
+                                    } else {
+                                        String pathValue = null;
+                                        while (true) {
+                                            line = reader.readLine();
+                                            if (line == null) {
+                                                throw new IllegalArgumentException("Expected path");
+                                            } else if (line.trim().startsWith("#")) {
+                                                //ignore
+                                            } else {
+                                                pathValue = line.trim();
+                                                break;
+                                            }
+                                        }
+                                        m.body(new URL(pathValue), contentType + ";" + charSet);
+                                        GoMailBody last = m.body().get(m.body().size() - 1);
+                                        last.setOrder(order);
+                                        last.setExpandable(expandable);
+                                        last.setPosition(pos);
+                                    }
+                                } else {
+                                    if (base64) {
+                                        StringBuilder encoded = new StringBuilder();
+                                        while (true) {
+                                            line = reader.readLine();
+                                            if (line == null) {
+                                                break;
+                                            } else if (line.trim().startsWith("#")) {
+                                                //ignore
+                                            } else if (line.contains(":")) {
+                                                pushbackLine = line;
+                                                break;
+                                            } else {
+                                                encoded.append(line);
+                                            }
+                                        }
+                                        m.body(Base64.getDecoder().decode(encoded.toString()), contentType, pos);
+                                    } else {
+                                        StringBuilder fullText = new StringBuilder();
+                                        boolean first = true;
+                                        while (true) {
+                                            line = reader.readLine();
+                                            if (line == null) {
+                                                break;
+                                            } else if (line.trim().equals("<<end>>")) {
+                                                break;
+                                            } else {
+                                                if (first) {
+                                                    first = false;
+                                                } else {
+                                                    fullText.append("\n");
+                                                }
+                                                fullText.append(line);
+                                            }
+                                        }
+                                        m.body(fullText, contentType, pos);
+                                    }
                                     GoMailBody last = m.body().get(m.body().size() - 1);
+                                    last.setContentType(contentType);
                                     last.setOrder(order);
                                     last.setExpandable(expandable);
                                     last.setPosition(pos);
                                 }
                             } else {
-                                if (base64) {
-                                    StringBuilder encoded = new StringBuilder();
-                                    while (true) {
-                                        line = reader.readLine();
-                                        if (line == null) {
-                                            break;
-                                        } else if (line.trim().startsWith("#")) {
-                                            //ignore
-                                        } else if (line.contains(":")) {
-                                            pushbackLine = line;
-                                            break;
-                                        } else {
-                                            encoded.append(line);
-                                        }
-                                    }
-                                    m.body(Base64.getDecoder().decode(encoded.toString()), contentType, pos);
-                                } else {
-                                    StringBuilder fullText = new StringBuilder();
-                                    boolean first = true;
-                                    while (true) {
-                                        line = reader.readLine();
-                                        if (line == null) {
-                                            break;
-                                        } else if (line.trim().equals("<<end>>")) {
-                                            break;
-                                        } else {
-                                            if (first) {
-                                                first = false;
-                                            } else {
-                                                fullText.append("\n");
-                                            }
-                                            fullText.append(line);
-                                        }
-                                    }
-                                    m.body(fullText, contentType, pos);
-                                }
-                                GoMailBody last = m.body().get(m.body().size() - 1);
-                                last.setContentType(contentType);
-                                last.setOrder(order);
-                                last.setExpandable(expandable);
-                                last.setPosition(pos);
+                                throw new IllegalArgumentException("Unexpected " + line);
                             }
-                        } else {
-                            throw new IllegalArgumentException("Unexpected " + line);
                         }
                     }
+                } else {
+                    break;
                 }
-            } else {
-                break;
             }
+            return m;
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
-        return m;
     }
 
-    
+    public static String resolveDataSourceName(ExprList r) {
+        String name = null;
+        if (r.size() > 0) {
+            ExprList.Expr r0 = r.get(0);
+            if (r0.isWord()) {
+                return r0.toWordExpr().getValue();
+            } else if (r0.isString()) {
+                return r0.toStringExpr().getValue();
+            } else {
+                ExprList.Expr n = r.searchValueByKey("name");
+                if (n != null) {
+                    if (n.toStringExpr() != null) {
+                        return n.toStringExpr().getValue();
+                    } else if (n.toWordExpr() != null) {
+                        return n.toWordExpr().getValue();
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     private void writeText(GoMail mail, OutputStream stream) throws IOException {
         PrintStream out = (stream instanceof PrintStream) ? ((PrintStream) stream) : new PrintStream(stream);
@@ -477,6 +522,7 @@ public class GoMailModuleSerializer {
             }
         }
     }
+
     private void writeText(GoMailMessage mail, OutputStream stream) throws IOException {
         PrintStream out = (stream instanceof PrintStream) ? ((PrintStream) stream) : new PrintStream(stream);
         out.println(SER_HEADER);
@@ -699,41 +745,52 @@ public class GoMailModuleSerializer {
         return null;
     }
 
-    public static GoMailDataSource deserializeDataSource(String propValue) {
-        int dots = propValue.indexOf(':');
-        if (dots > 0) {
-            String type = lineUnEscape(propValue.substring(0, dots));
-            if (StringUtils.isJavaIdentifier(type)) {
-                String serVal = lineUnEscape(propValue.substring(dots + 1));
-                return deserializeDataSource(type, serVal);
+    public static ExprList deserializeDataSourceArgs(String propValue, BufferedReader reader) {
+        ExprList r = new ExprList(propValue);
+        if (r.size() > 0) {
+            ExprList.Expr last = r.get(r.size() - 1);
+            if (last.toWordExpr() != null && "readlines".equals(last.toWordExpr().getValue())) {
+                try {
+                    StringBuilder sb = new StringBuilder();
+                    String line = null;
+                    boolean first = true;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.trim().isEmpty()) {
+                            break;
+                        }
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append("\n");
+                        }
+                        sb.append(line);
+                    }
+                    List<ExprList.Expr> ee = new ArrayList<ExprList.Expr>();
+                    ee.addAll(r.toList());
+                    ee.remove(ee.size() - 1);
+                    ee.add(ExprList.createKeyValue("readlines", sb.toString()));
+                    r = new ExprList().addAll(ee);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
             }
         }
-        return deserializeDataSource(null, propValue);
+        return r;
     }
 
-    public static GoMailDataSource deserializeDataSource(String type, String serVal) {
-        if (type == null || type.length() == 0) {
-            type = "default";
-        }
-        return new SerializedForm(type, serVal).instantiate(GoMailDataSourceSerializedFormConfig, GoMailDataSource.class);
+    public static GoMailDataSource deserializeDataSource(String propValue, BufferedReader reader) {
+        return deserializeDataSource(deserializeDataSourceArgs(propValue, reader));
     }
 
-    public static GoMailDataSourceFilter deserializeDataSourceFilter(String propValue) {
-        int dots = propValue.indexOf(':');
-        if (dots > 0) {
-            String type = lineUnEscape(propValue.substring(0, dots));
-            if (StringUtils.isJavaIdentifier(type)) {
-                String serVal = lineUnEscape(propValue.substring(dots + 1));
-                return deserializeDataSourceFilter(type, serVal);
-            }
-        }
-        return deserializeDataSourceFilter(null, propValue);
+    public static GoMailDataSource deserializeDataSource(ExprList r) {
+        return new SerializedForm(r).instantiate(GoMailDataSourceSerializedFormConfig, GoMailDataSource.class);
     }
 
-    public static GoMailDataSourceFilter deserializeDataSourceFilter(String type, String serVal) {
-        if (type == null || type.length() == 0) {
-            type = ExprGoMailDataSourceFilter.class.getName();
+    public static GoMailDataSourceFilter deserializeDataSourceFilter(ExprList r) {
+        if (r.searchValueByKey("type") == null) {
+            ExprList.Expr e = (ExprList.Expr) ExprList.createKeyValue("type", ExprGoMailDataSourceFilter.class.getName());
+            r.add(0, e);
         }
-        return new SerializedForm(type, serVal).instantiate(GoMailDataSourcefilterSerializedFormConfig, GoMailDataSourceFilter.class);
+        return new SerializedForm(r).instantiate(GoMailDataSourceSerializedFormConfig, GoMailDataSourceFilter.class);
     }
 }
