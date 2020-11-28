@@ -25,7 +25,7 @@ public class Ex06LoadFile {
 "#to : ${from}\n" +
 "cc : ${from}\n" +
 "user : mylogin\n" +
-"password: canard77\n" +
+"password: password\n" +
 "property: mail.smtp.host=ssl0.ssl2.net\n" +
 "property: mail.smtp.port=123\n" +
 "property: mail.smtp.auth=true\n" +
