@@ -1,5 +1,5 @@
 
-import net.vpc.common.gomail.GoMail;
+import net.thevpc.gomail.GoMail;
 
 import java.io.IOException;
 

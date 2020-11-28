@@ -1,6 +1,5 @@
 
-import net.vpc.common.gomail.*;
-import net.vpc.common.gomail.modules.GoMailModuleProcessor;
+import net.thevpc.gomail.modules.GoMailModuleProcessor;
 
 import java.io.IOException;
 import java.util.Properties;

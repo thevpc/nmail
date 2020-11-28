@@ -1,7 +1,7 @@
 
 import java.io.File;
 import java.io.StringReader;
-import net.vpc.common.gomail.GoMail;
+import net.thevpc.gomail.GoMail;
 
 /*
  * To change this license header, choose License Headers in Project Properties.

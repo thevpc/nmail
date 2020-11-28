@@ -1,6 +1,6 @@
 
-import net.vpc.common.gomail.GoMail;
-import net.vpc.common.gomail.GoMailDataSourceFactory;
+import net.thevpc.gomail.GoMail;
+import net.thevpc.gomail.GoMailDataSourceFactory;
 
 import java.io.File;
 import java.io.IOException;
