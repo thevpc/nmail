@@ -11,9 +11,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: net.thevpc.common:thevpc-common-io:1.3.12" level="project" />
-    <orderEntry type="library" name="Maven: net.thevpc.common:thevpc-common-strings:1.2.18" level="project" />
-    <orderEntry type="library" name="Maven: net.thevpc.common:thevpc-common-utils:1.23.1" level="project" />
+    <orderEntry type="module" module-name="thevpc-common-io" />
+    <orderEntry type="module" module-name="thevpc-common-strings" />
+    <orderEntry type="module" module-name="thevpc-common-utils" />
     <orderEntry type="library" name="Maven: net.thevpc.upa:upa-api:1.2.0.49" level="project" />
     <orderEntry type="library" name="Maven: javax.mail:mail:1.5.0-b01" level="project" />
     <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />

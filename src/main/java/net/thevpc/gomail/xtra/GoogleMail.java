@@ -5,7 +5,7 @@ package net.thevpc.gomail.xtra;
 // *
 // * and open the template in the editor.
 // */
-//package net.vpc.lib.gomail.xtra;
+//package net.thevpc.lib.gomail.xtra;
 //
 //import com.sun.mail.smtp.SMTPTransport;
 //import java.io.File;

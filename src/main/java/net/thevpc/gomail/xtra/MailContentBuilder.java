@@ -3,7 +3,7 @@
 // *
 // * and open the template in the editor.
 // */
-//package net.vpc.common.gomail.xtra;
+//package netthevpc.common.gomail.xtra;
 //
 //import java.net.URL;
 //import java.util.HashMap;
