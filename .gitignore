@@ -1,2 +1,5 @@
 /target/
 /examples/target/
+/gomail/target/
+/ext/gomail/target/
+/ext/gomail-upa/target/
