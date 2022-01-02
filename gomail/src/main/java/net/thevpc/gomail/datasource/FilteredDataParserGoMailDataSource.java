@@ -50,11 +50,9 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
             parsed = true;
             GoMailDataSource data = base;
 
-            String[] columns = data.getColumns();
-
-            String[] colString = new String[columns.length];
+            String[] colString = new String[data.getColumnCount()];
             for (int i = 0; i < colString.length; i++) {
-                colString[i] = columns[i];
+                colString[i] = data.getColumn(i);
             }
             sColumns = colString;
             int max = data.getRowCount();
@@ -80,9 +78,9 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
     }
 
     @Override
-    public String[] getColumns() {
+    public String getColumn(int index) {
         parse();
-        return sColumns;
+        return sColumns[index];
     }
 
     @Override

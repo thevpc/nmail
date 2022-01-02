@@ -1,7 +1,6 @@
 
 import net.thevpc.gomail.GoMail;
 
-import java.io.IOException;
 
 /**
  * Created by vpc on 10/3/16.
@@ -29,7 +28,7 @@ public class Ex02HelloHtmlGomail {
                 GoMail.HTML_CONTENT_TYPE
         );
         go.setCredentials("me", "1234");
-        go.setSimulate(true);
+        go.setDry(true);
         go.send();
     }
 }

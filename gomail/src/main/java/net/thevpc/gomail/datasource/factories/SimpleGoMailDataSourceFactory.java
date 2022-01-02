@@ -10,6 +10,7 @@ import net.thevpc.gomail.GoMailDataSourceFactory;
 import net.thevpc.gomail.SupportedValue;
 import net.thevpc.gomail.datasource.FilteredDataParserGoMailDataSource;
 import net.thevpc.gomail.datasource.SimpleCsvGoMailDataSource;
+import net.thevpc.gomail.datasource.StringsGoMailDataSource;
 import net.thevpc.gomail.expr.Expr;
 import net.thevpc.gomail.util.SerializedForm;
 
@@ -47,6 +48,19 @@ public class SimpleGoMailDataSourceFactory implements GoMailDataSourceFactory {
                     @Override
                     public GoMailDataSource getValue() {
                         return new SimpleCsvGoMailDataSource(args);
+                    }
+                };
+            }
+            case "str":{
+                return new SupportedValue<GoMailDataSource>() {
+                    @Override
+                    public int getSupportLevel() {
+                        return 1;
+                    }
+
+                    @Override
+                    public GoMailDataSource getValue() {
+                        return new StringsGoMailDataSource(args);
                     }
                 };
             }

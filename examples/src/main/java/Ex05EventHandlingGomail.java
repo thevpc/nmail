@@ -1,7 +1,9 @@
 
+import net.thevpc.gomail.*;
 import net.thevpc.gomail.modules.GoMailModuleProcessor;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -15,7 +17,7 @@ public class Ex05EventHandlingGomail {
                 .to("you@gmail.com")
                 .cc("him@gmail.com")
                 .setCredentials("me", "1234")
-                .setSimulate(false)
+                .setDry(false)
                 .subject("Salute from the other side");
         go.body().add(
                 "<html>"
@@ -30,7 +32,7 @@ public class Ex05EventHandlingGomail {
         GoMailModuleProcessor processor = DefaultGoMailFactory.INSTANCE.createProcessor();
         //define another agent if ou want to consider replacing default java smtp sending agent
         processor.setAgent(new GoMailAgent() {
-            public int sendMessage(GoMailMessage mail, Properties properties, GoMailContext expr) throws IOException {
+            public int sendMessage(GoMailMessage mail, Properties properties, GoMailContext expr, Map<String,Object> vars) {
                 System.out.println("Je ne vais pas vraiment envoyer un mail mais je vais faire cet affichage");
                 //return 1 qui est le nombre de messages supposes envoyes
                 return 1;

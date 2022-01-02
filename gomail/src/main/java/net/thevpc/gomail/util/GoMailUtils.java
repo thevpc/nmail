@@ -1,5 +1,7 @@
 package net.thevpc.gomail.util;
 
+import net.thevpc.gomail.GoMailDataSource;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -163,6 +165,35 @@ public class GoMailUtils {
             return matcher.end();
         }
         return -1;
+    }
+
+    public static String escapeStringWithDoubleQuotes(String s) {
+        String q = escapeString(s);
+        return "\""+q+"\"";
+    }
+
+    public static String[][] getDataTable(GoMailDataSource ds) {
+        String[][] c=new String[ds.getRowCount()][];
+        for (int i = 0; i < c.length; i++) {
+            c[i]=new String[ds.getColumnCount()];
+            for (int j = 0; j < c[i].length; j++) {
+                c[i][j]=ds.getCell(i,j);
+            }
+        }
+        return c;
+    }
+
+    public static String[] getColumns(GoMailDataSource ds) {
+        String[] c=new String[ds.getColumnCount()];
+        for (int i = 0; i < c.length; i++) {
+            c[i]=ds.getColumn(i);
+        }
+        return c;
+    }
+
+    public static String escapeStringWithSimpleQuotes(String s) {
+        String q = escapeString(s);
+        return "'"+q+"'";
     }
 
     public static String escapeString(String s) {

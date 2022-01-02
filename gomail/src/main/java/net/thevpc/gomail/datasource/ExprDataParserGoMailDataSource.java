@@ -49,8 +49,8 @@ public class ExprDataParserGoMailDataSource extends AbstractGoMailDataSource {
     }
 
     @Override
-    public String[] getColumns() {
-        return base.getColumns();
+    public String getColumn(int index) {
+        return base.getColumn(index);
     }
 
     @Override

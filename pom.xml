@@ -10,8 +10,8 @@
     <packaging>pom</packaging>
     <modules>
         <module>gomail</module>
-        <module>ext/gomail-upa</module>
         <module>gomail-cli</module>
+        <module>examples</module>
     </modules>
     <properties>
     </properties>

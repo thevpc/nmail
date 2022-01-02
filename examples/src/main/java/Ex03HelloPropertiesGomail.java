@@ -35,7 +35,7 @@ public class Ex03HelloPropertiesGomail {
 
         go.setCredentials("me", "1234");
         //when setSimulate is true, no mail will be sent, but a log is written to stdout
-        go.setSimulate(true);
+        go.setDry(true);
         go.send();
 
     }

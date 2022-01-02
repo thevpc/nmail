@@ -16,6 +16,7 @@ import java.util.Objects;
 import net.thevpc.gomail.GoMailContext;
 import net.thevpc.gomail.GoMailDataSource;
 import net.thevpc.gomail.GoMailDataSourceRow;
+import net.thevpc.gomail.util.GoMailUtils;
 
 /**
  *
@@ -24,32 +25,14 @@ import net.thevpc.gomail.GoMailDataSourceRow;
 public abstract class AbstractGoMailDataSource implements GoMailDataSource {
 
     private GoMailDataSourceRow[] rows;
-    protected Object source;
-    private Object buildSource;
     private Map<String, Integer> indexes;
     private GoMailContext context;
 
-    protected AbstractGoMailDataSource(Object source) {
-        this.source = source;
-    }
     protected AbstractGoMailDataSource() {
     }
 
     @Override
     public void build(GoMailContext context, Map<String, Object> vars) {
-        if (source instanceof String) {
-            buildSource = context.eval((String) source, vars);
-        } else if (source instanceof File) {
-            buildSource = new File(context.eval(((File) source).getPath(), vars));
-        } else if (source instanceof URL) {
-            try {
-                buildSource = new URL(context.eval(((File) source).getPath(), vars));
-            } catch (MalformedURLException ex) {
-                throw new RuntimeException(ex);
-            }
-        } else {
-            buildSource = source;
-        }
         this.context = context;
     }
 
@@ -57,22 +40,11 @@ public abstract class AbstractGoMailDataSource implements GoMailDataSource {
         return context;
     }
 
-    protected Object getBuildSource() {
-        if (buildSource == null) {
-            throw new IllegalArgumentException("Unresolved source");
-        }
-        return buildSource;
-    }
-
-    protected Object getSource() {
-        return source;
-    }
-
     protected int indexOf(String colName) {
         if (indexes == null) {
             indexes = new HashMap<>();
             for (int i = 0; i < getColumnCount(); i++) {
-                indexes.put(getColumns()[i], i);
+                indexes.put(getColumn(i), i);
             }
         }
         Integer ii = indexes.get(colName);
@@ -118,7 +90,7 @@ public abstract class AbstractGoMailDataSource implements GoMailDataSource {
 
         @Override
         public String[] getColumns() {
-            return AbstractGoMailDataSource.this.getColumns();
+            return GoMailUtils.getColumns(AbstractGoMailDataSource.this);
         }
 
         @Override
@@ -152,28 +124,6 @@ public abstract class AbstractGoMailDataSource implements GoMailDataSource {
             return true;
         }
 
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 29 * hash + Objects.hashCode(this.source);
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final AbstractGoMailDataSource other = (AbstractGoMailDataSource) obj;
-        if (!Objects.equals(this.source, other.source)) {
-            return false;
-        }
-        return true;
     }
 
 }

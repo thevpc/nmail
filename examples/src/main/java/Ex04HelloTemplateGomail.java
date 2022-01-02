@@ -1,6 +1,7 @@
 
 import net.thevpc.gomail.GoMail;
 import net.thevpc.gomail.GoMailDataSourceFactory;
+import net.thevpc.gomail.datasource.StringsGoMailDataSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +33,8 @@ public class Ex04HelloTemplateGomail {
         );
         go.attachment(new File("my-attachment.xls"), null);
         go.attachment(new byte[]{1, 2, 3}, null);
-        go.repeatDatasource(GoMailDataSourceFactory.forStrings(
+        go.repeatDatasource(
+                new StringsGoMailDataSource(
                 new String[][]{
                     {"ali", "ben mahmoud", "ali@gmail.com", "ali@yahoo.com", "male"},
                     {"alia", "bel aid", "alia@gmail.com", "alia@yahoo.com", "female"}
@@ -41,7 +43,7 @@ public class Ex04HelloTemplateGomail {
         ));
 
         go.setCredentials("me", "1234");
-        go.setSimulate(true);
+        go.setDry(true);
         go.send();
 
     }

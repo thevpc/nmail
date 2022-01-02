@@ -21,7 +21,7 @@ public interface GoMailDataSource {
 
     int getRowCount();
 
-    String[] getColumns();
+    String getColumn(int index);
 
     GoMailDataSourceRow getRow(int rowIndex);
 
