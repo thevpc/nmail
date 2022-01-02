@@ -6,10 +6,14 @@
 package net.thevpc.gomail.modules;
 
 import net.thevpc.gomail.*;
-import net.thevpc.gomail.util.ExprList;
+import net.thevpc.gomail.datasource.ExprDataParserGoMailDataSource;
+import net.thevpc.gomail.expr.Expr;
+import net.thevpc.gomail.expr.ExprHelper;
+import net.thevpc.gomail.expr.ExprParser;
 import net.thevpc.gomail.util.GoMailUtils;
 import net.thevpc.gomail.util.SerializedForm;
 import net.thevpc.gomail.util.SerializedFormConfig;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -28,19 +32,14 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import net.thevpc.gomail.datasource.GoMailDataSourceFilter;
 import net.thevpc.gomail.datasource.FilteredDataParserGoMailDataSource;
 
 /**
- *
  * @author taha.bensalah@gmail.com
  */
 public class GoMailModuleSerializer {
@@ -49,10 +48,113 @@ public class GoMailModuleSerializer {
 
     public static final SerializedFormConfig GoMailDataSourceSerializedFormConfig
             = new SerializedFormConfig()
-                    .addImport(GoMailDataSource.class.getPackage().getName());
+            .addImport(GoMailDataSource.class.getPackage().getName());
 
     public static final SerializedFormConfig GoMailDataSourcefilterSerializedFormConfig
             = new SerializedFormConfig();
+
+    public static String resolveDataSourceName(Expr[] r) {
+        if (r.length > 0) {
+            Expr r0 = r[0];
+            if (r0.isWord()) {
+                return r0.toWordExpr().getName();
+            } else if (r0.isString()) {
+                return r0.toStringExpr().getValue();
+            } else {
+                Expr n = ExprHelper.searchValueByKey("name", r);
+                if (n != null) {
+                    if (n.toStringExpr() != null) {
+                        return n.toStringExpr().getValue();
+                    } else if (n.toWordExpr() != null) {
+                        return n.toWordExpr().getName();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String lineUnEscape(String v) {
+        StringBuilder sb = new StringBuilder();
+        boolean wasEscape = false;
+        for (char c : v.toCharArray()) {
+            switch (c) {
+                case '\\': {
+                    if (wasEscape) {
+                        sb.append('\\');
+                        wasEscape = false;
+                    } else {
+                        wasEscape = true;
+                    }
+                    break;
+                }
+                case 'n': {
+                    if (wasEscape) {
+                        sb.append('\n');
+                    } else {
+                        sb.append(c);
+                    }
+                    break;
+                }
+                default: {
+                    sb.append(c);
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    public static Expr[] deserializeDataSourceArgs(String propValue, BufferedReader reader) {
+        List<Expr> r = new ArrayList<>(
+                Arrays.asList(
+                        ExprHelper.toStatements(new ExprParser(propValue).parseStatementList())
+                )
+        );
+        if (r.size() > 0) {
+            Expr last = r.get(r.size() - 1);
+            if (last.toWordExpr() != null && "readlines".equals(last.toWordExpr().getName())) {
+                try {
+                    r.remove(r.size() - 1);
+                    StringBuilder sb = new StringBuilder();
+                    String line = null;
+                    boolean first = true;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.trim().isEmpty()) {
+                            break;
+                        }
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append("\n");
+                        }
+                        sb.append(line);
+                    }
+                    r.add(ExprHelper.assign("readlines", sb.toString()));
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            }
+        }
+        return r.toArray(new Expr[0]);
+    }
+
+    public static GoMailDataSource deserializeDataSource(String propValue, BufferedReader reader) {
+        return deserializeDataSource(deserializeDataSourceArgs(propValue, reader));
+    }
+
+    public static GoMailDataSource deserializeDataSource(Expr[] r) {
+        return new SerializedForm(r).instantiate(GoMailDataSourceSerializedFormConfig, GoMailDataSource.class);
+    }
+
+    public static GoMailDataSourceFilter deserializeDataSourceFilter(Expr[] r) {
+        List<Expr> all = new ArrayList<>(Arrays.asList(r));
+        Expr ezz = ExprHelper.searchValueByKey("type", r);
+        if (ezz == null) {
+            Expr e = ExprHelper.assign("type", "expr");
+            all.add(0, e);
+        }
+        return new SerializedForm(all.toArray(new Expr[0])).instantiate(GoMailDataSourceSerializedFormConfig, GoMailDataSourceFilter.class);
+    }
 
     public void write(GoMail mail, GoMailFormat format, File file) throws IOException {
         write(mail, format, file);
@@ -132,12 +234,17 @@ public class GoMailModuleSerializer {
     }
 
     public GoMail read(GoMailFormat format, File file) {
-        return read(format, (Object)file);
+        return read(format, (Object) file);
     }
 
     public GoMail read(GoMailFormat format, Object source) {
         try (InputStream in = openInputStream(source)) {
             GoMail m = read(format, in);
+            if(source instanceof Path) {
+                m.setCwd(((Path) source).getParent().toString());
+            }else if(source instanceof File){
+                m.setCwd(((File) source).getParent());
+            }
             Object f = source;
 //            PathInfo pathInfo = PathInfo.create(f);
 //            if (pathInfo != null) {
@@ -191,6 +298,8 @@ public class GoMailModuleSerializer {
                             String propValue = line.substring(i).trim();
                             if (cmd.equals("from")) {
                                 m.from(lineUnEscape(propValue));
+                            } else if (cmd.equals("provider")) {
+                                m.provider(lineUnEscape(propValue));
                             } else if (cmd.equals("to")) {
                                 m.to(lineUnEscape(propValue));
                             } else if (cmd.equals("toeach")) {
@@ -213,9 +322,11 @@ public class GoMailModuleSerializer {
                                         lineUnEscape(propValue.substring(0, eq)), lineUnEscape(propValue.substring(eq + 1))
                                 );
                             } else if (cmd.equals("repeat")) {
-                                m.repeatDatasource(new FilteredDataParserGoMailDataSource(propValue));
+                                m.repeatDatasource(new ExprDataParserGoMailDataSource(
+                                        new ExprParser(propValue).parseStatementList()
+                                ));
                             } else if (cmd.equals("datasource")) {
-                                ExprList r = deserializeDataSourceArgs(propValue, reader);
+                                Expr[] r = deserializeDataSourceArgs(propValue, reader);
                                 String name = resolveDataSourceName(r);
                                 if (name == null) {
                                     name = "";
@@ -226,8 +337,8 @@ public class GoMailModuleSerializer {
                                 }
                                 GoMailDataSource d = deserializeDataSource(r);
                                 m.namedDataSources().put(name, d);
-                            } else if (cmd.equals("simulate")) {
-                                m.setSimulate(Boolean.valueOf(propValue));
+                            } else if (cmd.equals("dry")) {
+                                m.setDry(Boolean.valueOf(propValue));
                             } else if (cmd.equals("object") || cmd.equals("attachment") || cmd.equals("footer") || cmd.equals("header")) {
                                 GoMailBodyPosition pos = GoMailBodyPosition.valueOf(cmd.toUpperCase());
                                 boolean expandable = true;
@@ -339,28 +450,6 @@ public class GoMailModuleSerializer {
         }
     }
 
-    public static String resolveDataSourceName(ExprList r) {
-        String name = null;
-        if (r.size() > 0) {
-            ExprList.Expr r0 = r.get(0);
-            if (r0.isWord()) {
-                return r0.toWordExpr().getValue();
-            } else if (r0.isString()) {
-                return r0.toStringExpr().getValue();
-            } else {
-                ExprList.Expr n = r.searchValueByKey("name");
-                if (n != null) {
-                    if (n.toStringExpr() != null) {
-                        return n.toStringExpr().getValue();
-                    } else if (n.toWordExpr() != null) {
-                        return n.toWordExpr().getValue();
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     private void writeText(GoMail mail, OutputStream stream) throws IOException {
         PrintStream out = (stream instanceof PrintStream) ? ((PrintStream) stream) : new PrintStream(stream);
         out.println(SER_HEADER);
@@ -425,13 +514,7 @@ public class GoMailModuleSerializer {
         {
             GoMailDataSource f = mail.repeatDataSource();
             if (f != null) {
-                out.print("repeat : ");
-                SerializedForm s = f.serialize();
-                Set<String> aliases = GoMailDataSourceSerializedFormConfig.getAliasesFor(s.getType());
-                String[] aliasesArr = aliases.toArray(new String[aliases.size()]);
-                String aliasType = aliasesArr.length == 0 ? s.getType() : aliasesArr[0];
-                out.print(lineEscape(aliasType + ":" + s.getValue()));
-                out.println();
+                out.println("repeat : " + f.toExpr());
             }
         }
         {
@@ -439,19 +522,13 @@ public class GoMailModuleSerializer {
                 GoMailDataSource f = me.getValue();
                 if (f != null) {
                     out.print("dataSource : ");
-                    out.print(me.getKey() + "=");
-                    SerializedForm s = f.serialize();
-                    Set<String> aliases = GoMailDataSourceSerializedFormConfig.getAliasesFor(s.getType());
-                    String[] aliasesArr = aliases.toArray(new String[aliases.size()]);
-                    String aliasType = aliasesArr.length == 0 ? s.getType() : aliasesArr[0];
-                    out.print(lineEscape(aliasType + ":" + s.getValue()));
-                    out.println();
+                    out.println(me.getKey() + "=" + f.toExpr());
                 }
             }
         }
         {
-            if (mail.isSimulate()) {
-                out.println("simulate : true");
+            if (mail.isDry()) {
+                out.println("dry : true");
             }
         }
         {
@@ -551,7 +628,7 @@ public class GoMailModuleSerializer {
         }
         {
             Properties f = mail.getProperties();
-            if (f != null && f.size() > 0) {
+            if (f != null && !f.isEmpty()) {
                 for (Map.Entry v : f.entrySet()) {
                     out.print("property : ");
                     out.print(lineEscape((String) v.getKey()) + "=" + lineEscape((String) v.getValue()));
@@ -560,8 +637,8 @@ public class GoMailModuleSerializer {
             }
         }
         {
-            if (mail.isSimulate()) {
-                out.println("simulate : true");
+            if (mail.isDry()) {
+                out.println("dry : true");
             }
         }
         {
@@ -616,36 +693,6 @@ public class GoMailModuleSerializer {
                 }
             }
         }
-    }
-
-    private static String lineUnEscape(String v) {
-        StringBuilder sb = new StringBuilder();
-        boolean wasEscape = false;
-        for (char c : v.toCharArray()) {
-            switch (c) {
-                case '\\': {
-                    if (wasEscape) {
-                        sb.append('\\');
-                        wasEscape = false;
-                    } else {
-                        wasEscape = true;
-                    }
-                    break;
-                }
-                case 'n': {
-                    if (wasEscape) {
-                        sb.append('\n');
-                    } else {
-                        sb.append(c);
-                    }
-                    break;
-                }
-                default: {
-                    sb.append(c);
-                }
-            }
-        }
-        return sb.toString();
     }
 
     private String lineEscape(String v) {
@@ -728,56 +775,6 @@ public class GoMailModuleSerializer {
             //ignore
         }
         return null;
-    }
-
-    public static ExprList deserializeDataSourceArgs(String propValue, BufferedReader reader) {
-        ExprList r = new ExprList(propValue);
-        if (r.size() > 0) {
-            ExprList.Expr last = r.get(r.size() - 1);
-            if (last.toWordExpr() != null && "readlines".equals(last.toWordExpr().getValue())) {
-                try {
-                    StringBuilder sb = new StringBuilder();
-                    String line = null;
-                    boolean first = true;
-                    while ((line = reader.readLine()) != null) {
-                        if (line.trim().isEmpty()) {
-                            break;
-                        }
-                        if (first) {
-                            first = false;
-                        } else {
-                            sb.append("\n");
-                        }
-                        sb.append(line);
-                    }
-                    List<ExprList.Expr> ee = new ArrayList<ExprList.Expr>();
-                    ee.addAll(r.toList());
-                    ee.remove(ee.size() - 1);
-                    ee.add(ExprList.createKeyValue("readlines", sb.toString()));
-                    r = new ExprList().addAll(ee);
-                } catch (IOException ex) {
-                    throw new UncheckedIOException(ex);
-                }
-            }
-        }
-        return r;
-    }
-
-    public static GoMailDataSource deserializeDataSource(String propValue, BufferedReader reader) {
-        return deserializeDataSource(deserializeDataSourceArgs(propValue, reader));
-    }
-
-    public static GoMailDataSource deserializeDataSource(ExprList r) {
-        return new SerializedForm(r).instantiate(GoMailDataSourceSerializedFormConfig, GoMailDataSource.class);
-    }
-
-    public static GoMailDataSourceFilter deserializeDataSourceFilter(ExprList r) {
-        if (r.searchValueByKey("type") == null) {
-//            ExprList.Expr e = (ExprList.Expr) ExprList.createKeyValue("type", ExprGoMailDataSourceFilter.class.getName());
-            ExprList.Expr e = (ExprList.Expr) ExprList.createKeyValue("type", "expr");
-            r.add(0, e);
-        }
-        return new SerializedForm(r).instantiate(GoMailDataSourceSerializedFormConfig, GoMailDataSourceFilter.class);
     }
 
     private InputStream openInputStream(Object o) {

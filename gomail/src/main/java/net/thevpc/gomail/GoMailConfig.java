@@ -21,21 +21,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author taha.bensalah@gmail.com
  */
 public class GoMailConfig {
 
     private static final Logger log = Logger.getLogger(GoMailConfig.class.getName());
-    private List<GoMailPropertiesSection> sections = new ArrayList<>();
     private static GoMailConfig defaultInstance;
-
-    public static GoMailConfig getDefaultInstance() {
-        if (defaultInstance == null) {
-            defaultInstance = new GoMailConfig(null);
-        }
-        return defaultInstance;
-    }
+    private List<GoMailPropertiesSection> sections = new ArrayList<>();
 
     public GoMailConfig() {
 
@@ -45,8 +37,15 @@ public class GoMailConfig {
         load(loader);
     }
 
+    public static GoMailConfig getDefaultInstance() {
+        if (defaultInstance == null) {
+            defaultInstance = new GoMailConfig(null);
+        }
+        return defaultInstance;
+    }
+
     public void load(ClassLoader loader) {
-        load("net/thevpc/common/gomail/gomail.properties", loader);
+        load("net/thevpc/gomail/gomail.properties", loader);
     }
 
     public void load(String url, ClassLoader loader) {
@@ -66,100 +65,109 @@ public class GoMailConfig {
         }
     }
 
+    private Cond parseCond(String line, boolean lenient) {
+        if (line != null) {
+            if (line.startsWith("[")) {
+                if (line.endsWith("]")) {
+                    String regexp0 = line.substring(1, line.length() - 1);
+                    int eq = regexp0.indexOf('=');
+                    if (eq < 0) {
+                        Cond cc = new Cond();
+                        cc.name = "";
+                        cc.expression = regexp0.substring(eq + 1);
+                        return cc;
+                    }
+                    Cond cc = new Cond();
+                    cc.name = regexp0.substring(0, eq);
+                    cc.expression = regexp0.substring(eq + 1);
+                    return cc;
+                } else if (lenient) {
+                    String regexp0 = line.substring(1, line.length());
+                    int eq = regexp0.indexOf('=');
+                    if (eq < 0) {
+                        Cond cc = new Cond();
+                        cc.name = "";
+                        cc.expression = regexp0.substring(eq + 1);
+                        return cc;
+                    }
+                    Cond cc = new Cond();
+                    cc.name = regexp0.substring(0, eq);
+                    cc.expression = regexp0.substring(eq + 1);
+                    log.severe("Expected Section [...]");
+                } else {
+                    throw new IllegalArgumentException("Expected Section [...]");
+                }
+            }
+        }
+        throw new IllegalArgumentException("Expected Section [...]");
+    }
+
     private void loadStream(InputStream in, boolean lenient) {
         try {
             BufferedReader r = new BufferedReader(new InputStreamReader(in));
             String line = null;
-            final int ANY = 1;
-            final int SECTION = 2;
-            int status = ANY;
             int priority = 0;
-            String regexp = null;
-            StringBuilder sb = new StringBuilder();
+            GoMailPropertiesSection sec = null;
             while ((line = r.readLine()) != null) {
-                switch (status) {
-                    case ANY: {
-                        line = line.trim();
-                        if (line.length() > 0) {
-                            if (line.startsWith("#")) {
-                                if (line.matches("#pragma\\s+.*")) {
-                                    String[] t = loadLineProperty(line.substring("#pragma".length() + 1));
-                                    if (t != null) {
-                                        if (t[0].equals("priority")) {
-                                            try {
-                                                priority = Integer.parseInt(t[1]);
-                                            } catch (NumberFormatException e) {
-                                                if (lenient) {
-                                                    log.severe("Unvalid priority " + t[1] + " : " + e.getMessage());
-                                                } else {
-                                                    throw e;
-                                                }
-                                            }
-                                        } else if (lenient) {
-                                            log.severe("Pragma " + t[0] + " not supported");
+                line = line.trim();
+                if (line.length() > 0) {
+                    if (line.startsWith("#")) {
+                        if (line.matches("#pragma\\s+.*")) {
+                            String[] t = loadLineProperty(line.substring("#pragma".length() + 1));
+                            if (t != null) {
+                                if (t[0].equals("priority")) {
+                                    try {
+                                        priority = Integer.parseInt(t[1]);
+                                    } catch (NumberFormatException e) {
+                                        if (lenient) {
+                                            log.severe("Invalid priority " + t[1] + " : " + e.getMessage());
                                         } else {
-                                            throw new IllegalArgumentException("Pragma " + t[0] + " not supported");
+                                            throw e;
                                         }
                                     }
-                                }
-                            } else if (line.startsWith("[")) {
-                                if (line.endsWith("]")) {
-                                    regexp = line.substring(1, line.length() - 1);
-                                    status = SECTION;
                                 } else if (lenient) {
-                                    regexp = line.substring(1, line.length());
-                                    status = SECTION;
-                                    log.severe("Expected Section [...]");
+                                    log.severe("Pragma " + t[0] + " not supported");
                                 } else {
-                                    throw new IllegalArgumentException("Expected Section [...]");
+                                    throw new IllegalArgumentException("Pragma " + t[0] + " not supported");
                                 }
-                            } else if (lenient) {
+                            }
+                        }
+                    } else if (line.startsWith("[")) {
+                        Cond cond = parseCond(line, lenient);
+                        sec = new GoMailPropertiesSection();
+                        sec.setFilterType(cond.name);
+                        sec.setFilterRegexp(cond.expression);
+                        sec.setPragmaPriority(priority);
+                        sec.setProperties(loadProperties(""));
+                        sections.add(sec);
+                        //reset
+                        priority = 0;
+                    } else if (line.trim().length() > 0 && sec != null) {
+                        Properties props = loadProperties(line.trim());
+                        if (props.isEmpty()) {
+                            if (lenient) {
                                 log.severe("Expected Section [...]");
                             } else {
                                 throw new IllegalArgumentException("Expected Section [...]");
                             }
-                        }
-                        break;
-                    }
-                    case SECTION: {
-                        if (line.startsWith("[")) {
-                            //consume
-                            GoMailPropertiesSection sec = new GoMailPropertiesSection();
-                            sec.setFilterRegexp(regexp);
-                            sec.setPragmaPriority(priority);
-                            sec.setProperties(loadProperties(sb.toString()));
-                            sections.add(sec);
-                            //reset
-                            regexp = null;
-                            priority = 0;
-                            sb.delete(0, sb.length());
-
-                            //
-                            regexp = line.substring(1, line.length() - 1);
-                            status = SECTION;
                         } else {
-                            sb.append(line).append("\n");
+                            sec.getProperties().putAll(props);
                         }
-                        break;
+                    } else if (lenient) {
+                        log.severe("Expected Section [...]");
+                    } else {
+                        throw new IllegalArgumentException("Expected Section [...]");
                     }
                 }
             }
-            if (regexp != null) {
-                //consume
-                GoMailPropertiesSection sec = new GoMailPropertiesSection();
-                sec.setFilterRegexp(regexp);
-                sec.setPragmaPriority(priority);
-                sec.setProperties(loadProperties(sb.toString()));
-                sections.add(sec);
-            }
-        } catch (IOException ex) {
+       } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
     private String[] loadLineProperty(String line) {
         Properties p = loadProperties(line);
-        if (p.size() > 0) {
+        if (!p.isEmpty()) {
             for (Map.Entry<Object, Object> entry : p.entrySet()) {
                 return new String[]{String.valueOf(entry.getKey()), String.valueOf(entry.getValue())};
             }
@@ -179,14 +187,33 @@ public class GoMailConfig {
         return p;
     }
 
-    public Properties findConfig(String email) {
+    public Properties findConfig(String email, String provider) {
         Properties p = new Properties();
         int priority = Integer.MIN_VALUE;
         for (GoMailPropertiesSection s : sections) {
-            if (s.getPragmaPriority() >= priority && email.matches(s.getFilterRegexp())) {
-                p.putAll(s.getProperties());
+            if (s.getPragmaPriority() >= priority) {
+                boolean accept = false;
+                String ft = s.getFilterType();
+                if (ft == null || ft.isEmpty() || ft.equals("mail")) {
+                    if (email != null && email.matches(s.getFilterRegexp())) {
+                        accept = true;
+                    }
+                } else if (ft.equals("provider")) {
+                    if (provider != null && provider.matches(s.getFilterRegexp())) {
+                        accept = true;
+                    }
+                }
+                if (accept) {
+                    p.putAll(s.getProperties());
+                }
             }
         }
         return p;
+    }
+
+    private static class Cond {
+
+        String name;
+        String expression;
     }
 }

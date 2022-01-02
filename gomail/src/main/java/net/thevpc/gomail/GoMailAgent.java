@@ -6,6 +6,7 @@
 package net.thevpc.gomail;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -15,5 +16,5 @@ import java.util.Properties;
  */
 public interface GoMailAgent {
 
-    public int sendMessage(GoMailMessage mail, Properties properties, GoMailContext mailContext) throws IOException;
+    public int sendMessage(GoMailMessage mail, Properties properties, GoMailContext mailContext, Map<String, Object> vars) throws IOException;
 }

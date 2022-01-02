@@ -3,3 +3,5 @@
 /gomail/target/
 /ext/gomail/target/
 /ext/gomail-upa/target/
+/gomail-cli/target/
+/.idea/

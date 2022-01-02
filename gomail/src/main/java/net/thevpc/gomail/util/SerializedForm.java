@@ -5,6 +5,11 @@
  */
 package net.thevpc.gomail.util;
 
+import net.thevpc.gomail.expr.Expr;
+import net.thevpc.gomail.expr.AssignExpr;
+import net.thevpc.gomail.expr.ExprHelper;
+import net.thevpc.gomail.expr.StringExpr;
+
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -20,30 +25,30 @@ import java.util.logging.Logger;
  */
 public class SerializedForm implements Serializable {
 
-//    private String type;
-//    private String value;
-    private ExprList args;
+    private Expr[] args;
 
 //    public SerializedForm(String type, String value) {
 //        this.type = type;
 //        this.value = value;
 //    }
-    public SerializedForm(ExprList args) {
+    public SerializedForm(Expr[] args) {
         this.args = args;
     }
 
-    public ExprList getArgs() {
+    public Expr[] getArgs() {
         return args;
     }
 
     public String getType() {
-        for (ExprList.Expr arg : args.toList()) {
-            ExprList.KeyValExpr t = arg.toKeyValExpr();
-            if (t != null && t.getKey().toWordExpr() != null && "type".equals(t.getKey().toWordExpr().getValue())) {
-                if (t.getValue().toStringExpr() != null) {
-                    return t.getValue().toStringExpr().getValue();
-                } else if (t.getValue().toWordExpr() != null) {
-                    return t.getValue().toWordExpr().getValue();
+        for (Expr arg : args) {
+            if(arg instanceof AssignExpr) {
+                AssignExpr t = (AssignExpr) arg;
+                if (t.getKey().toWordExpr() != null && "type".equals(t.getKey().toWordExpr().getName())) {
+                    if (t.getValue().toStringExpr() != null) {
+                        return t.getValue().toStringExpr().getValue();
+                    } else if (t.getValue().toWordExpr() != null) {
+                        return t.getValue().toWordExpr().getName();
+                    }
                 }
             }
         }
@@ -51,16 +56,16 @@ public class SerializedForm implements Serializable {
     }
 
     public String getValue() {
-        ExprList.Expr t = args.getValue("value");
+        Expr t = ExprHelper.getValue("value",args);
         if (t != null) {
             if (t.toStringExpr() != null) {
                 return t.toStringExpr().getValue();
             } else if (t.toWordExpr() != null) {
-                return t.toWordExpr().getValue();
+                return t.toWordExpr().getName();
             }
         }
-        for (ExprList.Expr arg : args.toList()) {
-            ExprList.StringExpr e = arg.toStringExpr();
+        for (Expr arg : args) {
+            StringExpr e = arg.toStringExpr();
             if (e != null) {
                 return e.getValue();
             }

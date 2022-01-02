@@ -13,6 +13,7 @@ import java.util.Properties;
  */
 public class GoMailPropertiesSection {
     private int pragmaPriority;
+    private String filterType;
     private String filterRegexp;
     private Properties properties;
 
@@ -34,6 +35,15 @@ public class GoMailPropertiesSection {
     public void setFilterRegexp(String filterRegexp) {
         this.filterRegexp = filterRegexp;
     }
+
+    public String getFilterType() {
+        return filterType;
+    }
+
+    public void setFilterType(String filterType) {
+        this.filterType = filterType;
+    }
+    
 
     public Properties getProperties() {
         return properties;

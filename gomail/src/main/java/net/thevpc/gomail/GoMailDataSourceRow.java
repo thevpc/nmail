@@ -5,7 +5,9 @@ package net.thevpc.gomail;
  */
 public interface GoMailDataSourceRow {
 
-    public String get(int index);
+    String get(int index);
 
-    public String get(String name);
+    String get(String name);
+
+    String[] getColumns();
 }

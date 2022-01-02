@@ -19,7 +19,7 @@ import net.thevpc.gomail.util.GoMailUtils;
  * @author taha.bensalah@gmail.com
  */
 public class GoMailMessage implements Serializable, Cloneable {
-    private boolean simulate = false;
+    private boolean dry = false;
     private String subject;
     private String from;
     private GoMailBodyList body = new GoMailBodyList();
@@ -30,7 +30,7 @@ public class GoMailMessage implements Serializable, Cloneable {
 
     public GoMailMessage(GoMail o) {
         properties = new Properties(o.getProperties());
-        simulate = o.isSimulate();
+        dry = o.isDry();
         subject = o.subject();
         from = o.from();
         body = body.copy();
@@ -55,12 +55,12 @@ public class GoMailMessage implements Serializable, Cloneable {
         }
     }
 
-    public boolean isSimulate() {
-        return simulate;
+    public boolean isDry() {
+        return dry;
     }
 
-    public void setSimulate(boolean simulate) {
-        this.simulate = simulate;
+    public void setDry(boolean dry) {
+        this.dry = dry;
     }
 
     public GoMailMessage body(Object value, String type) {
@@ -362,7 +362,7 @@ public class GoMailMessage implements Serializable, Cloneable {
         for (Map.Entry<Object, Object> entry : getProperties().entrySet()) {
             m.setProperty((String) entry.getKey(),(String) entry.getValue());
         }
-        m.setSimulate(isSimulate());
+        m.setDry(isDry());
         m.subject(subject());
         m.from(from());
         m.body().add(body());
@@ -380,7 +380,7 @@ public class GoMailMessage implements Serializable, Cloneable {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 89 * hash + (this.simulate ? 1 : 0);
+        hash = 89 * hash + (this.dry ? 1 : 0);
         hash = 89 * hash + Objects.hashCode(this.subject);
         hash = 89 * hash + Objects.hashCode(this.from);
         hash = 89 * hash + Objects.hashCode(this.body);
@@ -400,7 +400,7 @@ public class GoMailMessage implements Serializable, Cloneable {
             return false;
         }
         final GoMailMessage other = (GoMailMessage) obj;
-        if (this.simulate != other.simulate) {
+        if (this.dry != other.dry) {
             return false;
         }
         if (!Objects.equals(this.subject, other.subject)) {

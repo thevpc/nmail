@@ -5,6 +5,9 @@
  */
 package net.thevpc.gomail;
 
+import net.thevpc.gomail.expr.Expr;
+import net.thevpc.gomail.util.SerializedForm;
+
 import java.io.File;
 import java.io.InputStream;
 import java.io.Reader;
@@ -16,13 +19,5 @@ import java.net.URL;
  */
 public interface GoMailDataSourceFactory {
 
-    int getSupportLevel(String type);
-
-    GoMailDataSource create(String type, URL url);
-    
-    GoMailDataSource create(String type, Reader reader);
-
-    GoMailDataSource create(String type, InputStream stream);
-
-    GoMailDataSource create(String type, File file);
+    SupportedValue<GoMailDataSource> create(String type, Expr[] args);
 }

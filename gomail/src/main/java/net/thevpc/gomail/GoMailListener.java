@@ -10,7 +10,13 @@ package net.thevpc.gomail;
  * @author taha.bensalah@gmail.com
  */
 public interface GoMailListener {
-    public void onBeforeSend(GoMailMessage mail);
-    public void onAfterSend(GoMailMessage mail);
-    public void onSendError(GoMailMessage mail,Throwable exc);
+    default void onBeforeSend(GoMailMessage mail){
+
+    }
+    default void onAfterSend(GoMailMessage mail){
+
+    }
+    default void onSendError(GoMailMessage mail,Throwable exc){
+
+    }
 }

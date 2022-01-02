@@ -24,7 +24,7 @@ import net.thevpc.gomail.GoMailDataSourceRow;
 public abstract class AbstractGoMailDataSource implements GoMailDataSource {
 
     private GoMailDataSourceRow[] rows;
-    private Object source;
+    protected Object source;
     private Object buildSource;
     private Map<String, Integer> indexes;
     private GoMailContext context;
@@ -32,16 +32,18 @@ public abstract class AbstractGoMailDataSource implements GoMailDataSource {
     protected AbstractGoMailDataSource(Object source) {
         this.source = source;
     }
+    protected AbstractGoMailDataSource() {
+    }
 
     @Override
-    public void build(GoMailContext context) {
+    public void build(GoMailContext context, Map<String, Object> vars) {
         if (source instanceof String) {
-            buildSource = context.eval((String) source);
+            buildSource = context.eval((String) source, vars);
         } else if (source instanceof File) {
-            buildSource = new File(context.eval(((File) source).getPath()));
+            buildSource = new File(context.eval(((File) source).getPath(), vars));
         } else if (source instanceof URL) {
             try {
-                buildSource = new URL(context.eval(((File) source).getPath()));
+                buildSource = new URL(context.eval(((File) source).getPath(), vars));
             } catch (MalformedURLException ex) {
                 throw new RuntimeException(ex);
             }
@@ -112,6 +114,11 @@ public abstract class AbstractGoMailDataSource implements GoMailDataSource {
         @Override
         public String get(int index) {
             return getCell(rowIndex, index);
+        }
+
+        @Override
+        public String[] getColumns() {
+            return AbstractGoMailDataSource.this.getColumns();
         }
 
         @Override

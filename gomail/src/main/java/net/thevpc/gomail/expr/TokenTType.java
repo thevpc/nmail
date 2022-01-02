@@ -1,0 +1,36 @@
+package net.thevpc.gomail.expr;
+
+public enum TokenTType {
+    DQ_STRING,
+    SQ_STRING,
+    WORD,
+    CHAR,
+    NUMBER,
+    PAR_OPEN,
+    PAR_CLOSE,
+    GT,
+    GTE,
+    LT,
+    LTE,
+    EQ,
+    NE,
+    PLUS,
+    MINUS,
+    ASSIGN,
+    EXCLAM,
+    SEMI_COLON,
+    COLON,
+    MUL,
+    DIV,
+    COMMA,
+    PIPE,
+    AND,
+    OR,
+    AMPS,
+    IF,
+    THEN,
+    ELSE,
+    END,
+    ;
+
+}

@@ -25,9 +25,11 @@ public class GoMail implements Serializable, Cloneable {
     public static final String HTML_CONTENT_TYPE = "text/html;charset=UTF-8";
     public static final String BYTES_CONTENT_TYPE = "application/octet-stream";
 
-    private boolean simulate = false;
+    private boolean dry = false;
+    private String cwd;
     private String subject;
     private String from;
+    private String provider;
     private GoMailBodyList body = new GoMailBodyList();
     private Properties properties = new Properties();
     private Set<String> to = new HashSet<>();
@@ -65,12 +67,12 @@ public class GoMail implements Serializable, Cloneable {
         }
     }
 
-    public boolean isSimulate() {
-        return simulate;
+    public boolean isDry() {
+        return dry;
     }
 
-    public GoMail setSimulate(boolean simulate) {
-        this.simulate = simulate;
+    public GoMail setDry(boolean dry) {
+        this.dry = dry;
         return this;
     }
 
@@ -154,6 +156,15 @@ public class GoMail implements Serializable, Cloneable {
 
     public GoMail from(String from) {
         this.from = from;
+        return this;
+    }
+
+    public String provider() {
+        return provider;
+    }
+
+    public GoMail provider(String provider) {
+        this.provider = provider;
         return this;
     }
 
@@ -452,7 +463,7 @@ public class GoMail implements Serializable, Cloneable {
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 89 * hash + (this.simulate ? 1 : 0);
+        hash = 89 * hash + (this.dry ? 1 : 0);
         hash = 89 * hash + Objects.hashCode(this.subject);
         hash = 89 * hash + Objects.hashCode(this.from);
         hash = 89 * hash + Objects.hashCode(this.body);
@@ -476,7 +487,7 @@ public class GoMail implements Serializable, Cloneable {
             return false;
         }
         final GoMail other = (GoMail) obj;
-        if (this.simulate != other.simulate) {
+        if (this.dry != other.dry) {
             return false;
         }
         if (!Objects.equals(this.subject, other.subject)) {
@@ -521,5 +532,14 @@ public class GoMail implements Serializable, Cloneable {
 
     public void send(GoMailListener listener) {
         DefaultGoMailFactory.INSTANCE.createProcessor().sendMessage(this, null, listener);
+    }
+
+    public String getCwd() {
+        return cwd;
+    }
+
+    public GoMail setCwd(String cwd) {
+        this.cwd = cwd;
+        return this;
     }
 }

@@ -7,7 +7,7 @@ package net.thevpc.gomail.datasource;
 
 import net.thevpc.gomail.GoMailContext;
 import net.thevpc.gomail.GoMailDataSourceRow;
-import net.thevpc.gomail.util.SerializedForm;
+import net.thevpc.gomail.expr.Expr;
 
 /**
  *
@@ -17,5 +17,5 @@ public interface GoMailDataSourceFilter {
 
     public boolean accept(GoMailContext context, GoMailDataSourceRow row);
 
-    public SerializedForm serialize();
+    public Expr toExpr();
 }

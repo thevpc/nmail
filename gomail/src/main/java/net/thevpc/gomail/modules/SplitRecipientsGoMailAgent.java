@@ -23,7 +23,7 @@ public class SplitRecipientsGoMailAgent implements GoMailAgent {
     }
 
     @Override
-    public int sendMessage(GoMailMessage mail, Properties roProperties, GoMailContext mailContext) throws IOException {
+    public int sendMessage(GoMailMessage mail, Properties roProperties, GoMailContext mailContext, Map<String, Object> vars) throws IOException {
         int max=-1;
         final Properties properties = new Properties();
         if (roProperties != null) {
@@ -38,7 +38,7 @@ public class SplitRecipientsGoMailAgent implements GoMailAgent {
             max=Integer.parseInt(maxRecipients);
         }
         if(max<=0){
-            return base.sendMessage(mail, roProperties, mailContext);
+            return base.sendMessage(mail, roProperties, mailContext, vars);
         }
         int recipients = mail.to().size() + mail.bcc().size() + mail.cc().size();
         if(recipients >max){
@@ -73,11 +73,11 @@ public class SplitRecipientsGoMailAgent implements GoMailAgent {
             }
             int x=0;
             for (GoMailMessage other : splittedMails) {
-                x+=base.sendMessage(other, roProperties, mailContext);
+                x+=base.sendMessage(other, roProperties, mailContext, vars);
             }
             return x;
         }else{
-            return base.sendMessage(mail, roProperties, mailContext);
+            return base.sendMessage(mail, roProperties, mailContext, vars);
         }
     }
 }

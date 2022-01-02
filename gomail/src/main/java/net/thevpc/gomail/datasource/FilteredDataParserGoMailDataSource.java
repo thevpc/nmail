@@ -10,16 +10,17 @@ import java.io.StreamTokenizer;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.thevpc.gomail.GoMailContext;
 import net.thevpc.gomail.GoMailDataSource;
 import net.thevpc.gomail.GoMailDataSourceRow;
-import net.thevpc.gomail.modules.GoMailModuleSerializer;
-import net.thevpc.gomail.util.ExprList;
-import net.thevpc.gomail.util.SerializedForm;
+import net.thevpc.gomail.expr.Expr;
+import net.thevpc.gomail.expr.OpExpr;
+import net.thevpc.gomail.expr.TokenTType;
+import net.thevpc.gomail.util.MyGoMailDataSourceFilter;
 
 /**
- *
  * @author taha.bensalah@gmail.com
  */
 public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource {
@@ -28,65 +29,26 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
     private String[] sColumns;
     private boolean parsed = false;
     private GoMailDataSourceFilter filter;
-    private GoMailDataSource dataSource;
-//    private Map<String, XMailDataSource> dataSources;
+    private GoMailDataSource base;
+    private Expr filterExpr;
+    private Expr baseExpr;
 
-    public FilteredDataParserGoMailDataSource(String source) {
-        super(source);
-//        this.filter = filter;
-//        this.dataSources = dataSources;
+    public FilteredDataParserGoMailDataSource(Expr baseExpr, Expr filterExpr) {
+        this.baseExpr = baseExpr;
+        this.filterExpr = filterExpr;
     }
 
     @Override
-    public SerializedForm serialize() {
-//        XMailDataSource ss = (XMailDataSource) getSource();
-        //"'" + ss.serialize() + "' where " + filter.serialize()
-        return new SerializedForm(
-                new ExprList().addAll(
-                        ExprList.createKeyValue("type", getClass().getName()),
-                        ExprList.createKeyValue("value", getSource().toString())
-                )
-        );
-    }
-
-    public static FilteredDataParserGoMailDataSource valueOf(SerializedForm s) {
-        return new FilteredDataParserGoMailDataSource(s.getValue());
-
-//        return new FilteredDataParserXMailDataSource(new HashMap<String, XMailDataSource>(), ds, dsf);
-    }
-
-    @Override
-    public void build(GoMailContext context) {
-        super.build(context);
-
-        String ss = (String) getBuildSource();
-        GSelect s = new GSelect(ss);
-        String en = s.getSource();
-        String ea = s.getAlias();
-        dataSource = null;
-        if (en == null && ea != null) {
-            dataSource = context.getRegisteredDataSources().get(ea);
-            if (dataSource == null) {
-                dataSource = GoMailModuleSerializer.deserializeDataSource(ea, null);
-            }
-        } else if (en != null && ea == null) {
-            dataSource = context.getRegisteredDataSources().get(en);
-            if (dataSource == null) {
-                dataSource = GoMailModuleSerializer.deserializeDataSource(en, null);
-            }
-        } else {
-            dataSource = GoMailModuleSerializer.deserializeDataSource(en, /*ea,*/ null);
-        }
-//        expr.from((NameOrSelect) null, null);
-        filter = GoMailModuleSerializer.deserializeDataSourceFilter(new ExprList()
-                .add(ExprList.createKeyValue("value", ss))
-        );
+    public void build(GoMailContext context, Map<String, Object> vars) {
+        super.build(context, vars);
+        base = context.buildDataSource(baseExpr,vars);
+        filter = filterExpr == null ? null : new MyGoMailDataSourceFilter(filterExpr,vars);
     }
 
     private void parse() {
         if (!parsed) {
             parsed = true;
-            GoMailDataSource data = dataSource;
+            GoMailDataSource data = base;
 
             String[] columns = data.getColumns();
 
@@ -106,15 +68,15 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
     }
 
     @Override
-    public String getCell(int rowIndex, int colIndex) {
-        parse();
-        return rows.get(rowIndex).get(colIndex);
-    }
-
-    @Override
     public int getColumnCount() {
         parse();
         return sColumns.length;
+    }
+
+    @Override
+    public int getRowCount() {
+        parse();
+        return rows.size();
     }
 
     @Override
@@ -124,9 +86,14 @@ public class FilteredDataParserGoMailDataSource extends AbstractGoMailDataSource
     }
 
     @Override
-    public int getRowCount() {
+    public String getCell(int rowIndex, int colIndex) {
         parse();
-        return rows.size();
+        return rows.get(rowIndex).get(colIndex);
+    }
+
+
+    public Expr toExpr() {
+        return new OpExpr(TokenTType.PIPE, baseExpr, filterExpr);
     }
 
     public static class GSelect {

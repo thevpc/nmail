@@ -41,7 +41,7 @@ import net.thevpc.gomail.util.GoMailUtils;
 public class DefaultGoMailAgent implements GoMailAgent {
     public static final GoMailAgent INSTANCE=new DefaultGoMailAgent();
     @Override
-    public int sendMessage(GoMailMessage mail, Properties roProperties, GoMailContext mailContext) throws IOException {
+    public int sendMessage(GoMailMessage mail, Properties roProperties, GoMailContext mailContext, Map<String, Object> vars) throws IOException {
         final Properties properties = new Properties();
         if (roProperties != null) {
             properties.putAll(roProperties);
@@ -124,13 +124,13 @@ public class DefaultGoMailAgent implements GoMailAgent {
                 }
             }
             if (attachments.isEmpty()) {
-                message.setContent(getDataSource(mainBody, mailContext), mainBody.getContentType());//
+                message.setContent(getDataSource(mainBody, mailContext, vars), mainBody.getContentType());//
             } else {
                 Multipart multipart = new MimeMultipart();
                 int fileIndex = 0;
-                multipart.addBodyPart(toMimeBodyPart(mainBody, fileIndex++, mailContext));
+                multipart.addBodyPart(toMimeBodyPart(mainBody, fileIndex++, mailContext, vars));
                 for (GoMailBody xb : attachments) {
-                    multipart.addBodyPart(toMimeBodyPart(xb, fileIndex++, mailContext));
+                    multipart.addBodyPart(toMimeBodyPart(xb, fileIndex++, mailContext, vars));
                 }
                 message.setContent(multipart);
             }
@@ -142,7 +142,7 @@ public class DefaultGoMailAgent implements GoMailAgent {
                 System.out.println("\t " + entry.getKey() + " = " + entry.getValue());
             }
             System.out.println(mail);
-            if (mail.isSimulate()) {
+            if (mail.isDry()) {
                 System.out.println("simulated sending message successful... ");
             } else {
                 Transport.send(message);
@@ -155,24 +155,24 @@ public class DefaultGoMailAgent implements GoMailAgent {
         }
     }
 
-    private Object getDataSource(GoMailBody p, GoMailContext expr) throws IOException {
-        Object o = GoMailModuleProcessor.resolveBodySource(p, expr);
+    private Object getDataSource(GoMailBody p, GoMailContext expr, Map<String, Object> vars) throws IOException {
+        Object o = GoMailModuleProcessor.resolveBodySource(p, expr, vars);
         if (o instanceof File) {
             return new FileDataSource((File) o);
         } else if (o instanceof URL) {
             if (GoMailUtils.isTextPlainContentType(p.getContentType())) {
-                return GoMailModuleProcessor.loadBodyString(p, expr);
+                return GoMailModuleProcessor.loadBodyString(p, expr, vars);
             }
             if (GoMailUtils.isTextHtmlContentType(p.getContentType())) {
-                return GoMailModuleProcessor.loadBodyString(p, expr);
+                return GoMailModuleProcessor.loadBodyStringHtml(p, expr, vars);
             }
             return new ByteArrayDataSource(GoMailUtils.loadByteArray(((URL) o).openStream()), p.getContentType());
         } else if (o instanceof byte[]) {
             if (GoMailUtils.isTextPlainContentType(p.getContentType())) {
-                return GoMailModuleProcessor.loadBodyString(p, expr);
+                return GoMailModuleProcessor.loadBodyString(p, expr, vars);
             }
             if (GoMailUtils.isTextHtmlContentType(p.getContentType())) {
-                return GoMailModuleProcessor.loadBodyString(p, expr);
+                return GoMailModuleProcessor.loadBodyStringHtml(p, expr, vars);
             }
             return new ByteArrayDataSource(((byte[]) o), p.getContentType());
         } else {
@@ -180,16 +180,16 @@ public class DefaultGoMailAgent implements GoMailAgent {
         }
     }
 
-    private MimeBodyPart toMimeBodyPart(GoMailBody xb, int fileIndex, GoMailContext expr) throws IOException, MessagingException {
+    private MimeBodyPart toMimeBodyPart(GoMailBody xb, int fileIndex, GoMailContext expr, Map<String, Object> vars) throws IOException, MessagingException {
         MimeBodyPart messageBodyPart = new MimeBodyPart();
-        Object dataSource = getDataSource(xb, expr);
+        Object dataSource = getDataSource(xb, expr, vars);
         messageBodyPart.setDataHandler(
                 (dataSource instanceof DataSource) ? new DataHandler((DataSource) dataSource)
                         : new DataHandler(dataSource, xb.getContentType()));
         if (fileIndex > 0) {
             messageBodyPart.setHeader("Content-ID", "<" + ("part" + fileIndex) + ">");
         }
-        Object o = GoMailModuleProcessor.resolveBodySource(xb, expr);
+        Object o = GoMailModuleProcessor.resolveBodySource(xb, expr, vars);
         if (o instanceof File) {
             messageBodyPart.setFileName(((File) o).getName());
         } else if (fileIndex > 0) {

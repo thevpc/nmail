@@ -11,6 +11,7 @@
     <modules>
         <module>gomail</module>
         <module>ext/gomail-upa</module>
+        <module>gomail-cli</module>
     </modules>
     <properties>
     </properties>

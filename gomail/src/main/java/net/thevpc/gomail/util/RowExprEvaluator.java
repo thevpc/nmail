@@ -11,6 +11,6 @@ package net.thevpc.gomail.util;
  */
 public interface RowExprEvaluator {
 
-    public String evalExpressionString(String placeholderName);
+    String evalExpressionString(String placeholderName);
     
 }

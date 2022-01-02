@@ -5,6 +5,8 @@
  */
 package net.thevpc.gomail;
 
+import net.thevpc.gomail.expr.Expr;
+
 import java.util.Map;
 
 /**
@@ -13,7 +15,11 @@ import java.util.Map;
  */
 public interface GoMailContext {
 
-    public String eval(String expr);
+    Expr parse(String expr);
+
+    GoMailDataSource buildDataSource(Expr expr, Map<String,Object> vars);
+
+    public String eval(String expr, Map<String, Object> vars);
 
     public GoMailProperties getProperties();
 

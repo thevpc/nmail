@@ -5,7 +5,9 @@
  */
 package net.thevpc.gomail;
 
-import net.thevpc.gomail.util.SerializedForm;
+import net.thevpc.gomail.expr.Expr;
+
+import java.util.Map;
 
 /**
  *
@@ -13,7 +15,7 @@ import net.thevpc.gomail.util.SerializedForm;
  */
 public interface GoMailDataSource {
 
-    void build(GoMailContext context);
+    void build(GoMailContext context, Map<String, Object> vars);
 
     int getColumnCount();
 
@@ -27,5 +29,5 @@ public interface GoMailDataSource {
 
     String getCell(int rowIndex, String colName);
 
-    public SerializedForm serialize();
+    Expr toExpr();
 }
