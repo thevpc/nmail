@@ -10,107 +10,112 @@ import net.thevpc.gomail.GoMailMessage;
 import net.thevpc.nuts.*;
 
 import net.thevpc.gomail.GoMail;
+import net.thevpc.nuts.cmdline.NArg;
+import net.thevpc.nuts.cmdline.NCmdLine;
+import net.thevpc.nuts.cmdline.NCmdLineContext;
+import net.thevpc.nuts.cmdline.NCmdLineRunner;
+import net.thevpc.nuts.io.NPath;
+import net.thevpc.nuts.util.NBlankable;
+import net.thevpc.nuts.util.NMsg;
 
-public class GomailCli implements NutsApplication, NutsAppCmdProcessor {
+public class GomailCli implements NApplication {
 
     LinkedHashSet<String> messageIds = new LinkedHashSet<>();
     String db;
 
     public static void main(String[] args) {
-        NutsApplication.main(GomailCli.class, args);
+        NApplication.main(GomailCli.class, args);
     }
 
     @Override
-    public void run(NutsApplicationContext appContext) {
-        appContext.processCommandLine(this);
-    }
-
-    @Override
-    public boolean onCmdNextOption(NutsArgument option, NutsCommandLine commandline, NutsApplicationContext context) {
-        switch (option.getStringKey()) {
-            case "-d":
-            case "--db": {
-                option = commandline.nextString();
-                if (option.isActive()) {
-                    this.db = option.getStringValue();
+    public void run(NSession session) {
+        session.runAppCmdLine(new NCmdLineRunner() {
+            @Override
+            public boolean nextOption(NArg option, NCmdLine cmdLine, NCmdLineContext context) {
+                switch (option.getStringKey().get()) {
+                    case "-d":
+                    case "--db": {
+                        option = cmdLine.nextEntry().get();
+                        if (option.isActive()) {
+                            db = option.getStringValue().get();
+                        }
+                        return true;
+                    }
                 }
+                //no options for now
+                return false;
+            }
+
+            @Override
+            public boolean nextNonOption(NArg nonOption, NCmdLine cmdLine, NCmdLineContext context) {
+                messageIds.add(cmdLine.next().get().getImage());
                 return true;
             }
 
-        }
-        //no options for now
-        return false;
-    }
-
-    @Override
-    public boolean onCmdNextNonOption(NutsArgument nonOption, NutsCommandLine commandline, NutsApplicationContext context) {
-        messageIds.add(commandline.next().getString());
-        return true;
-    }
-
-    @Override
-    public void onCmdFinishParsing(NutsCommandLine commandline, NutsApplicationContext context) {
-        if (this.messageIds.isEmpty()) {
-            commandline.requiredNonOptions("messageId");
-        }
-    }
-
-    @Override
-    public void onCmdExec(NutsCommandLine commandline, NutsApplicationContext context) {
-        NutsSession session = context.getSession();
-        for (String messageId : messageIds) {
-            List<NutsPath> paths = getValidFilePaths(NutsPath.of(messageId, session), ".gomail",
-                    NutsBlankable.isBlank(db) ? context.getConfigFolder().toString() : db
-            );
-            if (paths.isEmpty()) {
-                commandline.throwError(NutsMessage.cstyle("invalid messageId %s", messageId));
+            @Override
+            public void validate(NCmdLine cmdLine, NCmdLineContext context) {
+                if (messageIds.isEmpty()) {
+                    cmdLine.throwMissingArgument("messageId");
+                }
             }
-            for (NutsPath path : paths) {
-                GoMail go = GoMail.load(path.toFile().toFile());
-                go.setDry(context.getSession().isDry());
-                int[] sendCount=new int[1];
-                go.send(new GoMailListener() {
-                    @Override
-                    public void onBeforeSend(GoMailMessage mail) {
 
+            @Override
+            public void run(NCmdLine cmdLine, NCmdLineContext context) {
+                NSession session = context.getSession();
+                for (String messageId : messageIds) {
+                    List<NPath> paths = getValidFilePaths(NPath.of(messageId, session), ".gomail",
+                            NBlankable.isBlank(db) ? session.getAppConfFolder().toString() : db
+                    );
+                    if (paths.isEmpty()) {
+                        cmdLine.throwError(NMsg.ofC("invalid messageId %s", messageId));
                     }
+                    for (NPath path : paths) {
+                        GoMail go = GoMail.load(path.toFile().get());
+                        go.setDry(context.getSession().isDry());
+                        int[] sendCount=new int[1];
+                        go.send(new GoMailListener() {
+                            @Override
+                            public void onBeforeSend(GoMailMessage mail) {
 
-                    @Override
-                    public void onAfterSend(GoMailMessage mail) {
-                        sendCount[0]++;
-                    }
+                            }
 
-                    @Override
-                    public void onSendError(GoMailMessage mail, Throwable exc) {
-                        exc.printStackTrace();
+                            @Override
+                            public void onAfterSend(GoMailMessage mail) {
+                                sendCount[0]++;
+                            }
+
+                            @Override
+                            public void onSendError(GoMailMessage mail, Throwable exc) {
+                                exc.printStackTrace();
+                            }
+                        });
+                        System.out.println("####    sent "+ sendCount[0]+" using template "+path);
                     }
-                });
-                System.out.println("####    sent "+ sendCount[0]+" using template "+path);
+                }
             }
-        }
+        });
     }
 
-    private List<NutsPath> getValidFilePaths(NutsPath path, String extension, String... folders) {
-        NutsPath parentFolder = getValidFolderPath(path, folders);
+
+    private List<NPath> getValidFilePaths(NPath path, String extension, String... folders) {
+        NPath parentFolder = getValidFolderPath(path, folders);
         if (parentFolder != null) {
-            return parentFolder.list().filter(x -> x.getName().toLowerCase().endsWith(extension.toLowerCase()),
-                    elems -> elems.ofString("lowercase=" + extension.toLowerCase())
-            ).toList();
+            return parentFolder.stream().filter(x -> x.getName().toLowerCase().endsWith(extension.toLowerCase())).toList();
         }
-        NutsPath one = getValidFilePath(path, extension, folders);
+        NPath one = getValidFilePath(path, extension, folders);
         if (one == null) {
             return new ArrayList<>();
         }
         return Collections.singletonList(one);
     }
 
-    private NutsPath getValidFilePath(NutsPath path, String extension, String... folders) {
+    private NPath getValidFilePath(NPath path, String extension, String... folders) {
         if (path.isName()) {
             List<String> all = new ArrayList<>();
             all.addAll(Arrays.asList(folders));
             all.add(new File(".").getAbsolutePath());
             for (String folder : all) {
-                NutsPath a = path.toAbsolute(folder);
+                NPath a = path.toAbsolute(folder);
                 if (a.isRegularFile()) {
                     return a;
                 }
@@ -129,13 +134,13 @@ public class GomailCli implements NutsApplication, NutsAppCmdProcessor {
         return null;
     }
 
-    private NutsPath getValidFolderPath(NutsPath path, String... folders) {
+    private NPath getValidFolderPath(NPath path, String... folders) {
         if (path.isName()) {
             List<String> all = new ArrayList<>();
             all.addAll(Arrays.asList(folders));
             all.add(new File(".").getAbsolutePath());
             for (String folder : all) {
-                NutsPath a = path.toAbsolute(folder);
+                NPath a = path.toAbsolute(folder);
                 if (a.isDirectory()) {
                     return a;
                 }

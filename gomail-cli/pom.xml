@@ -62,7 +62,7 @@
         <dependency>
             <groupId>net.thevpc.nuts</groupId>
             <artifactId>nuts</artifactId>
-            <version>0.8.3-rc1</version>
+            <version>0.8.4</version>
         </dependency>
         <dependency>
             <groupId>net.thevpc.gomail</groupId>
