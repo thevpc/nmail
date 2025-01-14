@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.thevpc.gomail</groupId>
     <artifactId>gomail</artifactId>
-    <version>1.2.9</version> <!--version updated -->
+    <version>1.3.0</version> <!--version updated -->
     <packaging>jar</packaging>
     <name>net.thevpc.gomail.gomail</name>
     <url>https://github.com/thevpc/upa/wiki</url>
