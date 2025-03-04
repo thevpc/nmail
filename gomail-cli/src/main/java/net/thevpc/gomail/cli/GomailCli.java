@@ -28,8 +28,8 @@ public class GomailCli implements NApplication {
     }
 
     @Override
-    public void run(NSession session) {
-        session.runAppCmdLine(new NCmdLineRunner() {
+    public void run() {
+        NApp.of().processCmdLine(new NCmdLineRunner() {
             @Override
             public boolean nextOption(NArg option, NCmdLine cmdLine, NCmdLineContext context) {
                 switch (option.getStringKey().get()) {
@@ -63,8 +63,8 @@ public class GomailCli implements NApplication {
             public void run(NCmdLine cmdLine, NCmdLineContext context) {
                 NSession session = context.getSession();
                 for (String messageId : messageIds) {
-                    List<NPath> paths = getValidFilePaths(NPath.of(messageId, session), ".gomail",
-                            NBlankable.isBlank(db) ? session.getAppConfFolder().toString() : db
+                    List<NPath> paths = getValidFilePaths(NPath.of(messageId), ".gomail",
+                            NBlankable.isBlank(db) ? NApp.of().getConfFolder().toString() : db
                     );
                     if (paths.isEmpty()) {
                         cmdLine.throwError(NMsg.ofC("invalid messageId %s", messageId));
