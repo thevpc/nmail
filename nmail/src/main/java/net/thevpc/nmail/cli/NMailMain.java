@@ -27,7 +27,7 @@ public class NMailMain implements NApplication {
 
     @Override
     public void run() {
-        NApp.of().processCmdLine(new NCmdLineRunner() {
+        NApp.of().runCmdLine(new NCmdLineRunner() {
             @Override
             public boolean nextOption(NArg option, NCmdLine cmdLine, NCmdLineContext context) {
                 switch (option.getStringKey().get()) {
