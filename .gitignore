@@ -1,7 +1,7 @@
 /target/
 /examples/target/
-/gomail/target/
-/ext/gomail/target/
-/ext/gomail-upa/target/
-/gomail-cli/target/
+/nmail/target/
+/ext/nmail/target/
+/ext/nmail-upa/target/
+/nmail-cli/target/
 /.idea/

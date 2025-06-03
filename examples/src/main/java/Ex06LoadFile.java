@@ -1,7 +1,7 @@
 
 import java.io.File;
 import java.io.StringReader;
-import net.thevpc.gomail.GoMail;
+import net.thevpc.nmail.NMail;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -15,11 +15,11 @@ import net.thevpc.gomail.GoMail;
 public class Ex06LoadFile {
 
     public static void main(String[] args) {
-        GoMail go = GoMail.load(new File("/data/private/git/work-documents/gomail/aid-idha.gomail"));
+        NMail go = NMail.load(new File("/data/private/git/work-documents/nmail/aid-idha.nmail"));
         go.send();
         
-        go = GoMail.load(new StringReader(
-                "#mimetype=application/gomail\n" +
+        go = NMail.load(new StringReader(
+                "#mimetype=application/x-nmail\n" +
 "from : me@nowhere.com\n" +
 "to : ${Email}\n" +
 "#to : ${from}\n" +
