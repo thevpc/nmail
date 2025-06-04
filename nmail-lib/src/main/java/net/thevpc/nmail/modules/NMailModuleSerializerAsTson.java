@@ -408,29 +408,29 @@ public class NMailModuleSerializerAsTson {
     }
 
     private void writeText(NMail mail, OutputStream stream) throws IOException {
-        NObjectElementBuilder b = NElements.ofObjectBuilder();
+        NObjectElementBuilder b = NElement.ofObjectBuilder();
         if (mail.from() != null) {
             b.add("from", mail.from());
         }
         if (mail.to() != null && !mail.to().isEmpty()) {
-            b.add("to", NElements.ofStringArray(mail.to().toArray(new String[0])));
+            b.add("to", NElement.ofStringArray(mail.to().toArray(new String[0])));
         }
         if (mail.cc() != null && !mail.cc().isEmpty()) {
-            b.add("cc", NElements.ofStringArray(mail.cc().toArray(new String[0])));
+            b.add("cc", NElement.ofStringArray(mail.cc().toArray(new String[0])));
         }
         if (mail.bcc() != null && !mail.bcc().isEmpty()) {
-            b.add("bcc", NElements.ofStringArray(mail.bcc().toArray(new String[0])));
+            b.add("bcc", NElement.ofStringArray(mail.bcc().toArray(new String[0])));
         }
 
         if (mail.toeach() != null && !mail.toeach().isEmpty()) {
-            b.add("toeach", NElements.ofStringArray(mail.toeach().toArray(new String[0])));
+            b.add("toeach", NElement.ofStringArray(mail.toeach().toArray(new String[0])));
         }
 
         {
             Properties f = mail.getProperties();
             if (f != null && f.size() > 0) {
                 for (Map.Entry v : f.entrySet()) {
-                    b.add("property." + v.getKey(), NElements.ofString(v.getValue() == null ? null : v.getValue().toString()));
+                    b.add("property." + v.getKey(), NElement.ofString(v.getValue() == null ? null : v.getValue().toString()));
                 }
             }
         }
@@ -444,7 +444,7 @@ public class NMailModuleSerializerAsTson {
             if (!mail.namedDataSources().isEmpty()) {
                 b.add(
                         "dataSource",
-                        NElements.ofArray(mail.namedDataSources().entrySet().stream().map(x -> NElements.ofPair(x.getKey(), x.getValue().toExpr().toString())).toArray(NElement[]::new))
+                        NElement.ofArray(mail.namedDataSources().entrySet().stream().map(x -> NElement.ofPair(x.getKey(), x.getValue().toExpr().toString())).toArray(NElement[]::new))
                 );
             }
         }
@@ -461,10 +461,10 @@ public class NMailModuleSerializerAsTson {
             NMailBodyList f = mail.body();
             if (f != null) {
                 for (NMailBody bb : f) {
-                    NObjectElementBuilder nob = NElements.ofObjectBuilder();
+                    NObjectElementBuilder nob = NElement.ofObjectBuilder();
                     String contentType = bb.getContentType();
-                    if(contentType==null){
-                        contentType= NMail.BYTES_CONTENT_TYPE;
+                    if (contentType == null) {
+                        contentType = NMail.BYTES_CONTENT_TYPE;
                     }
                     if (NMail.HTML_CONTENT_TYPE.equals(contentType)) {
                         nob.name("html");
@@ -476,36 +476,36 @@ public class NMailModuleSerializerAsTson {
                             nob.addParam("contentType", contentType);
                         }
                     }
-                    boolean base64=false;
-                    if(contentType.startsWith("text/")){
-                        base64=true;
+                    boolean base64 = false;
+                    if (contentType.startsWith("text/")) {
+                        base64 = true;
                     }
                     if (bb.getOrder() != 0) {
                         nob.addParam("order", bb.getOrder());
                     }
                     if (bb.isExpandable()) {
-                        nob.addParam(NElements.ofName("expandable"));
+                        nob.addParam(NElement.ofName("expandable"));
                     }
 
                     if (bb instanceof NMailBodyPath) {
                         nob.add("path", ((NMailBodyPath) bb).getPath());
                     } else {
                         NMailBodyContent c = (NMailBodyContent) bb;
-                        if(base64){
-                            nob.addParam(NElements.ofName("base64"));
-                            nob.add(NElements.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
-                        }else {
+                        if (base64) {
+                            nob.addParam(NElement.ofName("base64"));
+                            nob.add(NElement.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
+                        } else {
                             String str = new String(c.getByteArray());
                             if (!str.contains("\"\"\"")) {
-                                nob.add(NElements.ofString(str, NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
                             } else if (!str.contains("'''")) {
-                                nob.add(NElements.ofString(str, NElementType.TRIPLE_SINGLE_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_SINGLE_QUOTED_STRING));
                             } else if (!str.contains("```")) {
-                                nob.add(NElements.ofString(str, NElementType.TRIPLE_ANTI_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_ANTI_QUOTED_STRING));
                             } else {
-                                base64=true;
-                                nob.addParam(NElements.ofName("base64"));
-                                nob.add(NElements.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
+                                base64 = true;
+                                nob.addParam(NElement.ofName("base64"));
+                                nob.add(NElement.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
                             }
                         }
                     }
@@ -514,29 +514,29 @@ public class NMailModuleSerializerAsTson {
             }
         }
 
-        NElements.ofPlainTson(b).print(stream);
+        NElementWriter.ofTson().write(b, stream);
     }
 
     private void writeText(NMailMessage mail, OutputStream stream) throws IOException {
-        NObjectElementBuilder b = NElements.ofObjectBuilder();
+        NObjectElementBuilder b = NElement.ofObjectBuilder();
         if (mail.from() != null) {
             b.add("from", mail.from());
         }
         if (mail.to() != null && !mail.to().isEmpty()) {
-            b.add("to", NElements.ofStringArray(mail.to().toArray(new String[0])));
+            b.add("to", NElement.ofStringArray(mail.to().toArray(new String[0])));
         }
         if (mail.cc() != null && !mail.cc().isEmpty()) {
-            b.add("cc", NElements.ofStringArray(mail.cc().toArray(new String[0])));
+            b.add("cc", NElement.ofStringArray(mail.cc().toArray(new String[0])));
         }
         if (mail.bcc() != null && !mail.bcc().isEmpty()) {
-            b.add("bcc", NElements.ofStringArray(mail.bcc().toArray(new String[0])));
+            b.add("bcc", NElement.ofStringArray(mail.bcc().toArray(new String[0])));
         }
 
         {
             Properties f = mail.getProperties();
             if (f != null && f.size() > 0) {
                 for (Map.Entry v : f.entrySet()) {
-                    b.add("property." + v.getKey(), NElements.ofString(v.getValue() == null ? null : v.getValue().toString()));
+                    b.add("property." + v.getKey(), NElement.ofString(v.getValue() == null ? null : v.getValue().toString()));
                 }
             }
         }
@@ -554,10 +554,10 @@ public class NMailModuleSerializerAsTson {
             NMailBodyList f = mail.body();
             if (f != null) {
                 for (NMailBody bb : f) {
-                    NObjectElementBuilder nob = NElements.ofObjectBuilder();
+                    NObjectElementBuilder nob = NElement.ofObjectBuilder();
                     String contentType = bb.getContentType();
-                    if(contentType==null){
-                        contentType= NMail.BYTES_CONTENT_TYPE;
+                    if (contentType == null) {
+                        contentType = NMail.BYTES_CONTENT_TYPE;
                     }
                     if (NMail.HTML_CONTENT_TYPE.equals(contentType)) {
                         nob.name("html");
@@ -569,36 +569,36 @@ public class NMailModuleSerializerAsTson {
                             nob.addParam("contentType", contentType);
                         }
                     }
-                    boolean base64=false;
-                    if(contentType.startsWith("text/")){
-                        base64=true;
+                    boolean base64 = false;
+                    if (contentType.startsWith("text/")) {
+                        base64 = true;
                     }
                     if (bb.getOrder() != 0) {
                         nob.addParam("order", bb.getOrder());
                     }
                     if (bb.isExpandable()) {
-                        nob.addParam(NElements.ofName("expandable"));
+                        nob.addParam(NElement.ofName("expandable"));
                     }
 
                     if (bb instanceof NMailBodyPath) {
                         nob.add("path", ((NMailBodyPath) bb).getPath());
                     } else {
                         NMailBodyContent c = (NMailBodyContent) bb;
-                        if(base64){
-                            nob.addParam(NElements.ofName("base64"));
-                            nob.add(NElements.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
-                        }else {
+                        if (base64) {
+                            nob.addParam(NElement.ofName("base64"));
+                            nob.add(NElement.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
+                        } else {
                             String str = new String(c.getByteArray());
                             if (!str.contains("\"\"\"")) {
-                                nob.add(NElements.ofString(str, NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
                             } else if (!str.contains("'''")) {
-                                nob.add(NElements.ofString(str, NElementType.TRIPLE_SINGLE_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_SINGLE_QUOTED_STRING));
                             } else if (!str.contains("```")) {
-                                nob.add(NElements.ofString(str, NElementType.TRIPLE_ANTI_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_ANTI_QUOTED_STRING));
                             } else {
-                                base64=true;
-                                nob.addParam(NElements.ofName("base64"));
-                                nob.add(NElements.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
+                                base64 = true;
+                                nob.addParam(NElement.ofName("base64"));
+                                nob.add(NElement.ofString(Base64.getEncoder().encodeToString(c.getByteArray()), NElementType.TRIPLE_DOUBLE_QUOTED_STRING));
                             }
                         }
                     }
@@ -607,7 +607,7 @@ public class NMailModuleSerializerAsTson {
             }
         }
 
-        NElements.ofPlainTson(b).print(stream);
+        NElementWriter.ofTson().write(b, stream);
     }
 
     private String lineEscape(String v) {
