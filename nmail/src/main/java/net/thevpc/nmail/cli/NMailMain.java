@@ -10,7 +10,6 @@ import net.thevpc.nuts.*;
 import net.thevpc.nmail.NMail;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineContext;
 import net.thevpc.nuts.cmdline.NCmdLineRunner;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
@@ -29,36 +28,35 @@ public class NMailMain implements NApplication {
     public void run() {
         NApp.of().runCmdLine(new NCmdLineRunner() {
             @Override
-            public boolean nextOption(NArg option, NCmdLine cmdLine, NCmdLineContext context) {
-                switch (option.getStringKey().get()) {
-                    case "-d":
-                    case "--db": {
-                        option = cmdLine.nextEntry().get();
-                        if (option.isActive()) {
-                            db = option.getStringValue().get();
+            public boolean next(NArg arg, NCmdLine cmdLine) {
+                if(arg.isOption()){
+                    switch (arg.getStringKey().get()) {
+                        case "-d":
+                        case "--db": {
+                            arg = cmdLine.nextEntry().get();
+                            if (arg.isNonCommented()) {
+                                db = arg.getStringValue().get();
+                            }
+                            return true;
                         }
-                        return true;
                     }
+                    //no options for now
+                    return false;
+                }else{
+                    files.add(cmdLine.next().get().getImage());
+                    return true;
                 }
-                //no options for now
-                return false;
             }
 
             @Override
-            public boolean nextNonOption(NArg nonOption, NCmdLine cmdLine, NCmdLineContext context) {
-                files.add(cmdLine.next().get().getImage());
-                return true;
-            }
-
-            @Override
-            public void validate(NCmdLine cmdLine, NCmdLineContext context) {
+            public void validate(NCmdLine cmdLine) {
                 if (files.isEmpty()) {
                     cmdLine.throwMissingArgument("messageId");
                 }
             }
 
             @Override
-            public void run(NCmdLine cmdLine, NCmdLineContext context) {
+            public void run(NCmdLine cmdLine) {
                 for (String f : files) {
                     List<NPath> paths = getValidFilePaths(NPath.of(f), ".nmail",
                             NBlankable.isBlank(db) ? NApp.of().getConfFolder().toString() : db
