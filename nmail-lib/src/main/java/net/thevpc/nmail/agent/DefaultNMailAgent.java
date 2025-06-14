@@ -153,7 +153,7 @@ public class DefaultNMailAgent implements NMailAgent {
             }
             if (mail.isDry()) {
                 System.out.println("simulated sending " + mail.sourceId() + " message successful... ");
-                throw new MessagingException("error");
+                //throw new MessagingException("error");
             } else {
                 Transport.send(message);
                 System.out.println("Sent " + mail.sourceId() + " message successfully... ");

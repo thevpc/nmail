@@ -44,7 +44,31 @@ public class NMailModuleSerializerAsTson {
     }
 
     public NMail read(Reader stream) {
-        NElement elem = NElementParser.ofJson().parse(stream);
+        NElement elem = NElementParser.ofTson().parse(stream);
+        if (elem.isAnyArray() || elem.isAnyUplet()) {
+            elem = elem.toObject().get();
+        } else if (elem.isAnyObject()) {
+            //
+        } else {
+            elem = elem.wrapIntoObject();
+        }
+        NObjectElement eo = elem.asObject().get();
+        NMail m = new NMail();
+        for (NElement sub : eo) {
+            if (sub.isNamedPair()) {
+                NPairElement p = sub.asPair().get();
+                String name = p.name().get();
+                NElement value = p.value();
+                putProperty(m, name, value);
+            } else {
+                throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", sub));
+            }
+        }
+        return m;
+    }
+
+    public NMail read(NPath stream) {
+        NElement elem = NElementParser.ofTson().parse(stream);
         if (elem.isAnyArray() || elem.isAnyUplet()) {
             elem = elem.toObject().get();
         } else if (elem.isAnyObject()) {
@@ -107,7 +131,7 @@ public class NMailModuleSerializerAsTson {
                 m.getProperties().put("app.mail.user", value.asStringValue().get());
                 break;
             }
-            case "app": {
+            case "password": {
                 m.getProperties().put("app.mail.password", value.asStringValue().get());
                 break;
             }
@@ -152,12 +176,13 @@ public class NMailModuleSerializerAsTson {
             case "header": {
                 NMailBodyPosition pos = NMailBodyPosition.valueOf(NNameFormat.LOWER_KEBAB_CASE.format(key).toUpperCase());
                 addBody(m, pos, value);
+                break;
             }
             default: {
                 if (key.startsWith("property.")) {
                     m.getProperties().put(key.substring("property.".length()), value.asStringValue().get());
                 } else {
-                    throw new IllegalArgumentException("Unexpected property " + key);
+                    throw new IllegalArgumentException("Unexpected property " + key + " : " + value);
                 }
             }
         }
@@ -166,30 +191,15 @@ public class NMailModuleSerializerAsTson {
     private void addBody(NMail m, NMailBodyPosition pos, NElement value) {
         boolean expandable = true;
         String contentType = NMail.HTML_CONTENT_TYPE;
-        String charSet = "charset=UTF-8";
-        Object bodyObject = null;
+        String charSet = "";
+        String contentString = null;
         int order = 0;
         boolean base64 = false;
-        for (NElementAnnotation annotation : value.annotations()) {
-            switch (annotation.name()) {
-                case "html": {
-                    contentType = NMail.HTML_CONTENT_TYPE;
-                    break;
-                }
-                case "utf8": {
-                    charSet = "charset=UTF-8";
-                    break;
-                }
-            }
-        }
+        boolean stringAsPath = false;
+
         if (value.isAnyString()) {
-            m.body(value.asStringValue().get(), contentType, pos);
-        } else if (value.isAnyObject()) {
-            NObjectElement o = value.asObject().get();
-            List<NElement> params = o.params().orNull();
-            String name = o.name().orNull();
-            if (name != null) {
-                switch (NNameFormat.VAR_NAME.format(name)) {
+            for (NElementAnnotation annotation : value.annotations()) {
+                switch (NNameFormat.LOWER_KEBAB_CASE.format(annotation.name())) {
                     case "html": {
                         contentType = NMail.HTML_CONTENT_TYPE;
                         break;
@@ -198,100 +208,64 @@ public class NMailModuleSerializerAsTson {
                         contentType = NMail.TEXT_CONTENT_TYPE;
                         break;
                     }
+                    case "utf8": {
+                        charSet = "UTF-8";
+                        break;
+                    }
                     case "bytes":
-                    case "binary": {
+                    case "binary":
+                    case "base64": {
                         contentType = NMail.BYTES_CONTENT_TYPE;
-                        base64 = true;
+                        break;
+                    }
+                    case "order": {
+                        order = annotation.param(0).asIntValue().get();
+                        break;
+                    }
+                    case "charset": {
+                        charSet = annotation.param(0).asStringValue().get();
+                    }
+                    case "content-type": {
+                        contentType = annotation.param(0).asStringValue().get();
+                        break;
+                    }
+                    case "expandable": {
+                        expandable = true;
+                        break;
+                    }
+                    case "non-expandable":
+                    case "not-expandable": {
+                        expandable = false;
+                        break;
+                    }
+                    case "path": {
+                        stringAsPath = true;
                         break;
                     }
                     default: {
-                        throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", name));
+                        throw new NIllegalArgumentException(NMsg.ofC("expected html,text,utf8,bytes,binary,base64,expandable,non-expandable, found %s", annotation.name()));
                     }
                 }
             }
-            if (params != null) {
-                for (NElement param : params) {
-                    if (param.isAnyString()) {
-                        String name2 = param.asStringValue().get();
-                        switch (NNameFormat.VAR_NAME.format(name2)) {
-                            case "html": {
-                                contentType = NMail.HTML_CONTENT_TYPE;
-                                break;
-                            }
-                            case "text": {
-                                contentType = NMail.TEXT_CONTENT_TYPE;
-                                break;
-                            }
-                            case "bytes":
-                            case "binary": {
-                                contentType = NMail.BYTES_CONTENT_TYPE;
-                                base64 = true;
-                                break;
-                            }
-                            case "base64": {
-                                base64 = true;
-                                break;
-                            }
-                            case "utf8": {
-                                charSet = "charset=UTF-8";
-                                break;
-                            }
-                            default: {
-                                throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", name));
-                            }
-                        }
-                    } else if (param.isNamedPair()) {
-                        NPairElement up = param.asPair().get();
-                        String name2 = up.name().get();
-                        NElement value2 = up.value();
-                        switch (NNameFormat.VAR_NAME.format(name2)) {
-                            case "type": {
-                                contentType = value2.asStringValue().get();
-                                break;
-                            }
-                            case "charset": {
-                                charSet = "charset=" + value2.asStringValue().get();
-                            }
-                            case "expandable": {
-                                expandable = value2.asBooleanValue().get();
-                            }
-                            case "path": {
-                                bodyObject = NPath.of(value2.asStringValue().get());
-                            }
-                            case "html": {
-                                contentType = NMail.HTML_CONTENT_TYPE;
-                                bodyObject = value2.asStringValue().get().getBytes();
-                                break;
-                            }
-                            case "text": {
-                                contentType = NMail.TEXT_CONTENT_TYPE;
-                                bodyObject = value2.asStringValue().get().getBytes();
-                                break;
-                            }
-                            case "base64":
-                            case "bytes":
-                            case "binary": {
-                                contentType = NMail.BYTES_CONTENT_TYPE;
-                                bodyObject = Base64.getDecoder().decode(value2.asStringValue().get());
-                                break;
-                            }
-                            case "order": {
-                                order = value2.asIntValue().get();
-                                break;
-                            }
-                            default: {
-                                throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", value2));
-                            }
-                        }
-                    } else {
-                        throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", param));
-                    }
+            contentString = value.asStringValue().get();
+        } else if (value.isNamedUplet()) {
+            NUpletElement u = value.asUplet().get();
+            switch (NNameFormat.LOWER_KEBAB_CASE.format(u.name().get())) {
+                case "content": {
+                    stringAsPath = false;
+                    break;
+                }
+                case "path": {
+                    stringAsPath = true;
+                    break;
+                }
+                default: {
+                    throw new NIllegalArgumentException(NMsg.ofC("expected content,path, found %s", u.name().get()));
                 }
             }
-            for (NElement child : o.children()) {
-                if (child.isName()) {
-                    String name2 = child.asStringValue().get();
-                    switch (NNameFormat.VAR_NAME.format(name2)) {
+            for (NElement pp : u.params()) {
+                if (pp.isName()) {
+                    switch (NNameFormat.LOWER_KEBAB_CASE.format(pp.asStringValue().get())) {
                         case "html": {
                             contentType = NMail.HTML_CONTENT_TYPE;
                             break;
@@ -300,87 +274,169 @@ public class NMailModuleSerializerAsTson {
                             contentType = NMail.TEXT_CONTENT_TYPE;
                             break;
                         }
+                        case "utf8": {
+                            charSet = "UTF-8";
+                            break;
+                        }
                         case "bytes":
-                        case "binary": {
+                        case "binary":
+                        case "base64": {
                             contentType = NMail.BYTES_CONTENT_TYPE;
+                            break;
+                        }
+                        case "expandable": {
+                            expandable = true;
+                            break;
+                        }
+                        case "non-expandable":
+                        case "not-expandable": {
+                            expandable = false;
+                            break;
+                        }
+                        default: {
+                            throw new NIllegalArgumentException(NMsg.ofC("expected html,text,utf8,bytes,binary,base64,expandable,non-expandable, found %s", pp.asStringValue().get()));
+                        }
+                    }
+                } else if (pp.isNamedPair()) {
+                    NPairElement nu = pp.asPair().get();
+                    switch (NNameFormat.LOWER_KEBAB_CASE.format(nu.key().asStringValue().get())) {
+                        case "expandable": {
+                            expandable = nu.value().asBooleanValue().get();
+                            break;
+                        }
+                        case "order": {
+                            order = nu.value().asIntValue().get();
+                            break;
+                        }
+                        case "charset": {
+                            charSet = nu.value().asStringValue().get();
+                        }
+                        case "content-type": {
+                            contentType = nu.value().asStringValue().get();
+                            break;
+                        }
+                        default: {
+                            throw new NIllegalArgumentException(NMsg.ofC("expected expandable,order,charset,content-type, found %s", nu.key().asStringValue().get()));
+                        }
+                    }
+                } else if (pp.isAnyString()) {
+                    contentString = pp.asStringValue().get();
+                } else {
+                    throw new NIllegalArgumentException(NMsg.ofC("expected pair or name, found %s", pp.type().id()));
+                }
+            }
+        } else if (value.isNamedObject() || value.isNamedParametrizedObject()) {
+            NObjectElement u = value.asObject().get();
+            switch (NNameFormat.LOWER_KEBAB_CASE.format(u.name().get())) {
+                case "content": {
+                    stringAsPath = false;
+                    break;
+                }
+                case "path": {
+                    stringAsPath = true;
+                    break;
+                }
+                default: {
+                    throw new NIllegalArgumentException(NMsg.ofC("expected content,path, found %s", u.name().get()));
+                }
+            }
+            List<NElement> children = new ArrayList<>();
+            if(u.params().isPresent()) {
+                children.addAll(u.params().orNull());
+            }
+            children.addAll(u.children());
+            for (NElement pp : children) {
+                if (pp.isName()) {
+                    switch (NNameFormat.LOWER_KEBAB_CASE.format(pp.asStringValue().get())) {
+                        case "html": {
+                            contentType = NMail.HTML_CONTENT_TYPE;
+                            break;
+                        }
+                        case "text": {
+                            contentType = NMail.TEXT_CONTENT_TYPE;
                             break;
                         }
                         case "utf8": {
                             charSet = "charset=UTF-8";
                             break;
                         }
+                        case "bytes":
+                        case "binary":
                         case "base64": {
-                            base64 = true;
+                            contentType = NMail.BYTES_CONTENT_TYPE;
+                            break;
+                        }
+                        case "expandable": {
+                            expandable = true;
+                            break;
+                        }
+                        case "non-expandable":
+                        case "not-expandable": {
+                            expandable = false;
                             break;
                         }
                         default: {
-                            throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", name));
+                            throw new NIllegalArgumentException(NMsg.ofC("expected html,text,utf8,bytes,binary,base64,expandable,non-expandable, found %s", pp.asStringValue().get()));
                         }
                     }
-                } else if (child.isAnyString()) {
-                    NElement value2 = child.asString().get();
-                    if (base64) {
-                        bodyObject = Base64.getDecoder().decode(value2.asStringValue().get());
-                    } else {
-                        bodyObject = value2.asStringValue().get().getBytes();
-                    }
-                } else if (child.isNamedPair()) {
-                    NPairElement up = child.asPair().get();
-                    String name2 = up.name().get();
-                    NElement value2 = up.value();
-                    switch (NNameFormat.LOWER_KEBAB_CASE.format(name2)) {
-                        case "content-type": {
-                            contentType = value2.asStringValue().get();
-                            break;
-                        }
-                        case "charset": {
-                            charSet = "charset=" + value2.asStringValue().get();
-                        }
+                } else if (pp.isNamedPair()) {
+                    NPairElement nu = pp.asPair().get();
+                    switch (NNameFormat.LOWER_KEBAB_CASE.format(nu.key().asStringValue().get())) {
                         case "expandable": {
-                            expandable = value2.asBooleanValue().get();
-                        }
-                        case "path": {
-                            bodyObject = NPath.of(value2.asStringValue().get());
-                        }
-                        case "html": {
-                            contentType = NMail.HTML_CONTENT_TYPE;
-                            bodyObject = value2.asStringValue().get().getBytes();
-                            break;
-                        }
-                        case "text": {
-                            contentType = NMail.TEXT_CONTENT_TYPE;
-                            bodyObject = value2.asStringValue().get().getBytes();
-                            break;
-                        }
-                        case "base64":
-                        case "bytes":
-                        case "binary": {
-                            contentType = NMail.BYTES_CONTENT_TYPE;
-                            bodyObject = Base64.getDecoder().decode(value2.asStringValue().get());
+                            expandable = nu.value().asBooleanValue().get();
                             break;
                         }
                         case "order": {
-                            order = value2.asIntValue().get();
+                            order = nu.value().asIntValue().get();
+                            break;
+                        }
+                        case "charset": {
+                            charSet = nu.value().asStringValue().get();
+                        }
+                        case "content-type": {
+                            contentType = nu.value().asStringValue().get();
                             break;
                         }
                         default: {
-                            throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", value2));
+                            throw new NIllegalArgumentException(NMsg.ofC("expected expandable,order,charset,content-type, found %s", nu.key().asStringValue().get()));
                         }
                     }
+                } else if (pp.isAnyString()) {
+                    contentString = pp.asStringValue().get();
                 } else {
-                    throw new NIllegalArgumentException(NMsg.ofC("unsupported %s", child));
+                    throw new NIllegalArgumentException(NMsg.ofC("expected pair or name, found %s", pp.type().id()));
                 }
-
+            }
+        } else {
+            throw new NIllegalArgumentException(NMsg.ofC("expected pair, found %s", value.type().id()));
+        }
+        if (contentString == null) {
+            throw new NIllegalArgumentException(NMsg.ofC("missing content"));
+        }
+        Object bodyObject;
+        if (stringAsPath) {
+            bodyObject = NPath.of(contentString);
+        } else {
+            if(charSet.isEmpty()){
+                charSet = "UTF-8";
+            }
+            if (base64) {
+                bodyObject = Base64.getDecoder().decode(contentString);
+            } else {
+                bodyObject = contentString;
             }
         }
-        if (bodyObject == null) {
-            throw new NIllegalArgumentException(NMsg.ofC("missing body"));
+
+        String cc = contentType;
+        if (!charSet.isEmpty()) {
+            cc = cc + ";charset=" + charSet;
         }
-        m.body(bodyObject, contentType + ";" + charSet, pos);
+        m.body(bodyObject, cc, pos);
         NMailBody last = m.body().get(m.body().size() - 1);
         last.setOrder(order);
         last.setExpandable(expandable);
         last.setPosition(pos);
+
     }
 
     private void addDs(String name, Expr expr, NMail m) {
