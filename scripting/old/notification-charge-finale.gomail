@@ -1,0 +1,40 @@
+#mimetype=application/xmail
+from : taha.bensalah@gmail.com
+to : ${Email}
+#to : ${from}
+cc : ${from}
+property : app.mail.user=taha.bensalah
+property : app.mail.password=mypwd
+datasource : ds=sheet:file:/home/vpc/Data/eniso/teaching-load/2014-2015/data/teachers.xlsx
+repeat : ds where Ignored=null and Email<>null and file_exists('/home/vpc/Data/eniso/teaching-load/2014-2015/generated/v15/teacher-assignments-eniso-ii-2014-15-v15-details/'+Prenom+' '+Nom+'-eniso-ii-2014-15-v15.xls')
+
+simulate : true
+subject : [ENISo][II] Charge 2014/2015 pour validation
+object : text/html expandable
+<html><body>
+<p>${if GENRE='f' then 'Chère Mme' else 'Cher si' end} ${Prenom},</p>
+<p>
+Veuillez trouver ci-joint votre charge actualisée & finale.
+Merci de m'envoyer un mail de confirmation.
+
+Par ailleurs, vous etes cordialement invité pour une réunion de département le mercredi prochain 08 avril vers 13H45 (jusqu'à 15H). 
+L'ordre du jour est :
+ + formation des les unités pédagogiques.
+
+ </p>
+<p>Amitiés</p>
+</body></html>
+<<end>>
+footer : text/html expandable
+<p><strong>Taha Ben Salah</strong></p>
+<p>Directeur departement Informatique Industrielle</p>
+<p>Ecole Nationale d'Ingenieurs de Sousse (ENISo)</p>
+<img src="cid:part1" alt="ATTACHMENT"/>
+
+<<end>>
+attachment : image/jpeg expandable path
+file:/home/vpc/Data/eniso/visual-identity/eniso-ii-half.jpg
+
+attachment : image/jpeg expandable path
+file:${'/home/vpc/Data/eniso/teaching-load/2014-2015/generated/v15/teacher-assignments-eniso-ii-2014-15-v15-details/'+Prenom+' '+Nom+'-eniso-ii-2014-15-v15.xls'}
+ 

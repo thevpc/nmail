@@ -1,0 +1,15 @@
+from       : my.email@gmail.com
+to         : "${Email}"
+cc         : "${from}"
+username   : my.email@gmail.com
+password   : "abcd abcd abcd abcd"
+datasource :
+  {
+    ds:"internship.rejections.xlsx"
+  }
+tracker    : "internship.rejections.tracker"
+repeat     : "ds | Ignored==null and Email<>null"
+dry        : false
+subject    : ¶ Following your internship application
+object     : path{html,expandable,"internship.rejections.html"}
+
