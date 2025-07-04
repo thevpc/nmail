@@ -44,7 +44,7 @@ public class NMailMain {
                     //no options for now
                     return false;
                 }else{
-                    files.add(cmdLine.next().get().getImage());
+                    files.add(cmdLine.next().get().image());
                     return true;
                 }
             }
