@@ -15,16 +15,17 @@ import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
 
-public class NMailMain implements NApplication {
+@NApp.Info
+public class NMailMain {
 
     LinkedHashSet<String> files = new LinkedHashSet<>();
     String db;
 
     public static void main(String[] args) {
-        NApplication.main(NMailMain.class, args);
+        NApp.builder(args).run();
     }
 
-    @Override
+    @NApp.Main
     public void run() {
         NApp.of().runCmdLine(new NCmdLineRunner() {
             @Override
