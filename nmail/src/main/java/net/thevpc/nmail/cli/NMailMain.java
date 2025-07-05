@@ -15,7 +15,7 @@ import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
 
-@NApp.Info
+@NApp.Definition
 public class NMailMain {
 
     LinkedHashSet<String> files = new LinkedHashSet<>();
