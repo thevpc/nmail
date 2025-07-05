@@ -15,7 +15,7 @@ import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
 
-@NApp.Definition
+@NAppDefinition
 public class NMailMain {
 
     LinkedHashSet<String> files = new LinkedHashSet<>();
@@ -25,7 +25,7 @@ public class NMailMain {
         NApp.builder(args).run();
     }
 
-    @NApp.Runner
+    @NAppRunner
     public void run() {
         NApp.of().runCmdLine(new NCmdLineRunner() {
             @Override
