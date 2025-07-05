@@ -35,7 +35,7 @@ public class NMailMain {
                         case "-d":
                         case "--db": {
                             arg = cmdLine.nextEntry().get();
-                            if (arg.isNonCommented()) {
+                            if (arg.isUncommented()) {
                                 db = arg.getStringValue().get();
                             }
                             return true;
