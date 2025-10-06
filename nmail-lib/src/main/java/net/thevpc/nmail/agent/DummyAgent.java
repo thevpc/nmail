@@ -4,8 +4,8 @@ import net.thevpc.nmail.NMailAgent;
 import net.thevpc.nmail.NMailContext;
 import net.thevpc.nmail.NMailMessage;
 import net.thevpc.nmail.expr.ExprVars;
-import net.thevpc.nuts.NOut;
-import net.thevpc.nuts.NWorkspace;
+import net.thevpc.nuts.io.NOut;
+import net.thevpc.nuts.core.NWorkspace;
 
 import java.util.Properties;
 
