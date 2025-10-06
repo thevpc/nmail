@@ -8,7 +8,7 @@ package net.thevpc.nmail.modules;
 import net.thevpc.nmail.*;
 import net.thevpc.nmail.datasource.factories.ServiceNMailDataSourceFactory;
 import net.thevpc.nmail.expr.*;
-import net.thevpc.nuts.NIllegalArgumentException;
+import net.thevpc.nuts.util.NIllegalArgumentException;
 import net.thevpc.nuts.elem.*;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NLiteral;
