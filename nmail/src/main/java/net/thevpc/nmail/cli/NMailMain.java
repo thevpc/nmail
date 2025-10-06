@@ -5,12 +5,15 @@ import java.util.*;
 
 import net.thevpc.nmail.NMailListener;
 import net.thevpc.nmail.NMailMessage;
-import net.thevpc.nuts.*;
 
 import net.thevpc.nmail.NMail;
+import net.thevpc.nuts.app.NApp;
+import net.thevpc.nuts.app.NAppDefinition;
+import net.thevpc.nuts.app.NAppRunner;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.cmdline.NCmdLineRunner;
+import net.thevpc.nuts.core.NSession;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.util.NMsg;
