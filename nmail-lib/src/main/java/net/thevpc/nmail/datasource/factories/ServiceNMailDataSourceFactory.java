@@ -7,7 +7,7 @@ package net.thevpc.nmail.datasource.factories;
 
 import net.thevpc.nmail.NMailDataSource;
 import net.thevpc.nmail.NMailDataSourceFactory;
-import net.thevpc.nmail.SupportedValue;
+import net.thevpc.nmail.NScorableValue;
 import net.thevpc.nmail.datasource.FilteredDataParserNMailDataSource;
 import net.thevpc.nmail.expr.Expr;
 import net.thevpc.nmail.expr.OpExpr;
@@ -63,12 +63,12 @@ public class ServiceNMailDataSourceFactory {
             return filter;
         }
 
-        SupportedValue<NMailDataSource> best = null;
+        NScorableValue<NMailDataSource> best = null;
         int lvl = -1;
         for (NMailDataSourceFactory f : found) {
-            SupportedValue<NMailDataSource> s = f.create(arg);
+            NScorableValue<NMailDataSource> s = f.create(arg);
             if(s!=null) {
-                int newLvl = s.getSupportLevel();
+                int newLvl = s.getScore();
                 if (newLvl > 0) {
                     if (newLvl > lvl) {
                         lvl = newLvl;
