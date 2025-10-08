@@ -7,7 +7,7 @@ package net.thevpc.nmail.datasource.factories;
 
 import net.thevpc.nmail.NMailDataSource;
 import net.thevpc.nmail.NMailDataSourceFactory;
-import net.thevpc.nmail.SupportedValue;
+import net.thevpc.nmail.NScorableValue;
 import net.thevpc.nmail.datasource.SimpleCsvNMailDataSource;
 import net.thevpc.nmail.datasource.SimpleXlsNMailDataSource;
 import net.thevpc.nmail.datasource.StringsNMailDataSource;
@@ -24,11 +24,11 @@ public class SimpleNMailDataSourceFactory implements NMailDataSourceFactory {
 
     }
 
-    public SupportedValue<NMailDataSource> createByFileType(String fileType, Expr arg) {
+    public NScorableValue<NMailDataSource> createByFileType(String fileType, Expr arg) {
         if(fileType.equalsIgnoreCase(".csv")) {
-            return new SupportedValue<NMailDataSource>() {
+            return new NScorableValue<NMailDataSource>() {
                 @Override
-                public int getSupportLevel() {
+                public int getScore() {
                     return 1;
                 }
 
@@ -39,9 +39,9 @@ public class SimpleNMailDataSourceFactory implements NMailDataSourceFactory {
             };
         }
         if( fileType.equalsIgnoreCase("xls") || fileType.equalsIgnoreCase("xlsx")) {
-            return new SupportedValue<NMailDataSource>() {
+            return new NScorableValue<NMailDataSource>() {
                 @Override
-                public int getSupportLevel() {
+                public int getScore() {
                     return 1;
                 }
 
@@ -54,13 +54,13 @@ public class SimpleNMailDataSourceFactory implements NMailDataSourceFactory {
         return null;
     }
     @Override
-    public SupportedValue<NMailDataSource> create(Expr arg) {
+    public NScorableValue<NMailDataSource> create(Expr arg) {
         if(arg instanceof StringExpr){
             String s=arg.asString();
             int ii = s.lastIndexOf('.');
             if(ii>=0){
                 String t = s.substring(ii + 1);
-                SupportedValue<NMailDataSource> u = createByFileType(t, arg);
+                NScorableValue<NMailDataSource> u = createByFileType(t, arg);
                 if(u!=null){
                     return u;
                 }
@@ -69,9 +69,9 @@ public class SimpleNMailDataSourceFactory implements NMailDataSourceFactory {
             switch (arg.toFunction().getName()){
                 case "string":
                 {
-                    return new SupportedValue<NMailDataSource>() {
+                    return new NScorableValue<NMailDataSource>() {
                         @Override
-                        public int getSupportLevel() {
+                        public int getScore() {
                             return 1;
                         }
 
