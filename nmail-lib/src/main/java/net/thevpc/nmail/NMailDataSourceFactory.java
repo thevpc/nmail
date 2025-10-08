@@ -13,5 +13,5 @@ import net.thevpc.nmail.expr.Expr;
  */
 public interface NMailDataSourceFactory {
 
-    SupportedValue<NMailDataSource> create(Expr arg);
+    NScorableValue<NMailDataSource> create(Expr arg);
 }
