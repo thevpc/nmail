@@ -14,6 +14,7 @@
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/AbstractNMailBody.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/util/SerializedForm.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/NMailBodyPosition.java
+/home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/NScorableValue.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/util/SerializedFormConfig.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/NMailBodyPath.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/util/DefaultRowExprEvaluator.java
@@ -65,6 +66,5 @@
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/modules/DefaultProps.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/util/DefaultNMailContext.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/NMailPropertiesSection.java
-/home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/SupportedValue.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/expr/Expr.java
 /home/vpc/xprojects/nuts-world/nuts-productivity/nmail/nmail-lib/src/main/java/net/thevpc/nmail/util/MyNMailDataSourceFilter.java
