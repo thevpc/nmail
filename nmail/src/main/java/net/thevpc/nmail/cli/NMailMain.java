@@ -16,7 +16,7 @@ import net.thevpc.nuts.cmdline.NCmdLineRunner;
 import net.thevpc.nuts.core.NSession;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
-import net.thevpc.nuts.util.NMsg;
+import net.thevpc.nuts.text.NMsg;
 
 @NAppDefinition
 public class NMailMain {
