@@ -44,7 +44,7 @@ public class NMailModuleSerializerAsTson {
     }
 
     public NMail read(Reader stream) {
-        NElement elem = NElementParser.ofTson().parse(stream);
+        NElement elem = NElementReader.ofTson().read(stream);
         if (elem.isAnyArray() || elem.isAnyUplet()) {
             elem = elem.toObject().get();
         } else if (elem.isAnyObject()) {
@@ -68,7 +68,7 @@ public class NMailModuleSerializerAsTson {
     }
 
     public NMail read(NPath stream) {
-        NElement elem = NElementParser.ofTson().parse(stream);
+        NElement elem = NElementReader.ofTson().read(stream);
         if (elem.isAnyArray() || elem.isAnyUplet()) {
             elem = elem.toObject().get();
         } else if (elem.isAnyObject()) {
@@ -557,7 +557,7 @@ public class NMailModuleSerializerAsTson {
                             } else if (!str.contains("'''")) {
                                 nob.add(NElement.ofString(str, NElementType.TRIPLE_SINGLE_QUOTED_STRING));
                             } else if (!str.contains("```")) {
-                                nob.add(NElement.ofString(str, NElementType.TRIPLE_ANTI_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_BACKTICK_STRING));
                             } else {
                                 base64 = true;
                                 nob.addParam(NElement.ofName("base64"));
@@ -650,7 +650,7 @@ public class NMailModuleSerializerAsTson {
                             } else if (!str.contains("'''")) {
                                 nob.add(NElement.ofString(str, NElementType.TRIPLE_SINGLE_QUOTED_STRING));
                             } else if (!str.contains("```")) {
-                                nob.add(NElement.ofString(str, NElementType.TRIPLE_ANTI_QUOTED_STRING));
+                                nob.add(NElement.ofString(str, NElementType.TRIPLE_BACKTICK_STRING));
                             } else {
                                 base64 = true;
                                 nob.addParam(NElement.ofName("base64"));
