@@ -219,14 +219,14 @@ public class NMailModuleSerializerAsTson {
                         break;
                     }
                     case "order": {
-                        order = annotation.param(0).asIntValue().get();
+                        order = annotation.param(0).get().asIntValue().get();
                         break;
                     }
                     case "charset": {
-                        charSet = annotation.param(0).asStringValue().get();
+                        charSet = annotation.param(0).get().asStringValue().get();
                     }
                     case "content-type": {
-                        contentType = annotation.param(0).asStringValue().get();
+                        contentType = annotation.param(0).get().asStringValue().get();
                         break;
                     }
                     case "expandable": {
