@@ -325,7 +325,7 @@ public class NMailModuleSerializerAsTson {
                     throw new NIllegalArgumentException(NMsg.ofC("expected pair or name, found %s", pp.type().id()));
                 }
             }
-        } else if (value.isNamedObject() || value.isNamedParametrizedObject()) {
+        } else if (value.isNamedObject() || value.isFullObject()) {
             NObjectElement u = value.asObject().get();
             switch (NNameFormat.LOWER_KEBAB_CASE.format(u.name().get())) {
                 case "content": {
