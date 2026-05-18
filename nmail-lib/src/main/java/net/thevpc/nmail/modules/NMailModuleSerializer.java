@@ -37,14 +37,14 @@ public class NMailModuleSerializer {
     public NMail read(NPath file) {
         NMailFormat f=null;
         if(!file.isRegularFile()){
-            if(file.resolveSibling(file.getName()+".nmail.tson").isRegularFile()) {
-                file = file.resolveSibling(file.getName() + ".nmail.tson");
+            if(file.resolveSibling(file.name()+".nmail.tson").isRegularFile()) {
+                file = file.resolveSibling(file.name() + ".nmail.tson");
                 f= NMailFormat.TSON;
-            }else if(file.resolveSibling(file.getName()+".tson").isRegularFile()) {
-                file =file.resolveSibling(file.getName()+".tson");
+            }else if(file.resolveSibling(file.name()+".tson").isRegularFile()) {
+                file =file.resolveSibling(file.name()+".tson");
                 f= NMailFormat.TSON;
-            }else if(file.resolveSibling(file.getName()+".nmail").isRegularFile()) {
-                file =file.resolveSibling(file.getName()+".nmail");
+            }else if(file.resolveSibling(file.name()+".nmail").isRegularFile()) {
+                file =file.resolveSibling(file.name()+".nmail");
             }
         }
         try(BufferedReader r=file.getBufferedReader()){

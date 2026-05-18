@@ -101,7 +101,7 @@ public class NMailMain {
     private List<NPath> getValidFilePaths(NPath path, String extension, String... folders) {
         NPath parentFolder = getValidFolderPath(path, folders);
         if (parentFolder != null) {
-            return parentFolder.stream().filter(x -> x.getName().toLowerCase().endsWith(extension.toLowerCase())).toList();
+            return parentFolder.stream().filter(x -> x.name().toLowerCase().endsWith(extension.toLowerCase())).toList();
         }
         NPath one = getValidFilePath(path, extension, folders);
         if (one == null) {
@@ -120,8 +120,8 @@ public class NMailMain {
                 if (a.isRegularFile()) {
                     return a;
                 }
-                if (!path.getName().endsWith(extension)) {
-                    a = path.resolveSibling(path.getName() + extension).toAbsolute(folder);
+                if (!path.name().endsWith(extension)) {
+                    a = path.resolveSibling(path.name() + extension).toAbsolute(folder);
                     if (a.isRegularFile()) {
                         return a;
                     }
