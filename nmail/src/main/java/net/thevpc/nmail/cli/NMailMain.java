@@ -63,7 +63,7 @@ public class NMailMain {
             public void run(NCmdLine cmdLine) {
                 for (String f : files) {
                     List<NPath> paths = getValidFilePaths(NPath.of(f), ".nmail",
-                            NBlankable.isBlank(db) ? NApp.of().getConfFolder().toString() : db
+                            NBlankable.isBlank(db) ? NApp.of().confFolder().toString() : db
                     );
                     if (paths.isEmpty()) {
                         cmdLine.throwError(NMsg.ofC("invalid messageId %s", f));
