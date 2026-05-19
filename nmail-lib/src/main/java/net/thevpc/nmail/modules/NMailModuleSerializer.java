@@ -47,7 +47,7 @@ public class NMailModuleSerializer {
                 file =file.resolveSibling(file.name()+".nmail");
             }
         }
-        try(BufferedReader r=file.getBufferedReader()){
+        try(BufferedReader r=file.asBufferedReader()){
             if(f==null){
                 f = detectFormat(r);
             }
