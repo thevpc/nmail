@@ -45,7 +45,7 @@ public class NMailModuleSerializerAsTson {
 
     public NMail read(Reader stream) {
         NElement elem = NElementReader.ofTson().read(stream);
-        if (elem.isAnyArray() || elem.isAnyUplet()) {
+        if (elem.isAnyArray() || elem.isAnyTuple()) {
             elem = elem.toObject().get();
         } else if (elem.isAnyObject()) {
             //
@@ -69,7 +69,7 @@ public class NMailModuleSerializerAsTson {
 
     public NMail read(NPath stream) {
         NElement elem = NElementReader.ofTson().read(stream);
-        if (elem.isAnyArray() || elem.isAnyUplet()) {
+        if (elem.isAnyArray() || elem.isAnyTuple()) {
             elem = elem.toObject().get();
         } else if (elem.isAnyObject()) {
             //
@@ -248,8 +248,8 @@ public class NMailModuleSerializerAsTson {
                 }
             }
             contentString = value.asStringValue().get();
-        } else if (value.isNamedUplet()) {
-            NUpletElement u = value.asUplet().get();
+        } else if (value.isNamedTuple()) {
+            NTupleElement u = value.asTuple().get();
             switch (NNameFormat.LOWER_KEBAB_CASE.format(u.name().get())) {
                 case "content": {
                     stringAsPath = false;
