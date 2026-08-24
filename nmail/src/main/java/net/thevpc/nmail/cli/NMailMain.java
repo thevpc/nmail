@@ -7,12 +7,11 @@ import net.thevpc.nmail.NMailListener;
 import net.thevpc.nmail.NMailMessage;
 
 import net.thevpc.nmail.NMail;
+import net.thevpc.nuts.app.NAppComplete;
 import net.thevpc.nuts.app.NApplication;
 import net.thevpc.nuts.app.NApp;
 import net.thevpc.nuts.app.NAppRun;
-import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
-import net.thevpc.nuts.cmdline.NCmdLineRunner;
 import net.thevpc.nuts.core.NSession;
 import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
@@ -28,73 +27,59 @@ public class NMailMain {
         NApplication.builder(args).run();
     }
 
+    private NCmdLine parseCmdLine() {
+        NCmdLine cmdLine = NApplication.of().cmdLine();
+        cmdLine.matcher()
+                .when("-d", "--db").asEntry(a -> db = a.stringValue())
+                .whenNonOption().asArg(a -> files.add(a.image()))
+                .withDefaults()
+                .requireAll();
+        return cmdLine;
+    }
+
+    @NAppComplete
+    public void complete() {
+        parseCmdLine().printCompleteResult();
+    }
+
     @NAppRun
     public void run() {
-        NApplication.of().runCmdLine(new NCmdLineRunner() {
-            @Override
-            public boolean next(NArg arg, NCmdLine cmdLine) {
-                if(arg.isOption()){
-                    switch (arg.getStringKey().get()) {
-                        case "-d":
-                        case "--db": {
-                            arg = cmdLine.nextEntry().get();
-                            if (arg.isUncommented()) {
-                                db = arg.getStringValue().get();
-                            }
-                            return true;
-                        }
-                    }
-                    //no options for now
-                    return false;
-                }else{
-                    files.add(cmdLine.next().get().image());
-                    return true;
-                }
+        NCmdLine cmdLine = parseCmdLine();
+        if (files.isEmpty()) {
+            cmdLine.throwMissingArgument("messageId");
+        }
+        for (String f : files) {
+            List<NPath> paths = getValidFilePaths(NPath.of(f), ".nmail",
+                    NBlankable.isBlank(db) ? NApplication.of().confFolder().toString() : db
+            );
+            if (paths.isEmpty()) {
+                cmdLine.throwError(NMsg.ofC("invalid messageId %s", f));
             }
-
-            @Override
-            public void validate(NCmdLine cmdLine) {
-                if (files.isEmpty()) {
-                    cmdLine.throwMissingArgument("messageId");
+            for (NPath path : paths) {
+                NMail go = NMail.load(path.toFile().get());
+                if (!go.isDry()) {
+                    go.setDry(NSession.of().isDry());
                 }
-            }
+                int[] sendCount = new int[1];
+                go.send(new NMailListener() {
+                    @Override
+                    public void onBeforeSend(NMailMessage mail) {
 
-            @Override
-            public void run(NCmdLine cmdLine) {
-                for (String f : files) {
-                    List<NPath> paths = getValidFilePaths(NPath.of(f), ".nmail",
-                            NBlankable.isBlank(db) ? NApplication.of().confFolder().toString() : db
-                    );
-                    if (paths.isEmpty()) {
-                        cmdLine.throwError(NMsg.ofC("invalid messageId %s", f));
                     }
-                    for (NPath path : paths) {
-                        NMail go = NMail.load(path.toFile().get());
-                        if (!go.isDry()) {
-                            go.setDry(NSession.of().isDry());
-                        }
-                        int[] sendCount = new int[1];
-                        go.send(new NMailListener() {
-                            @Override
-                            public void onBeforeSend(NMailMessage mail) {
 
-                            }
-
-                            @Override
-                            public void onAfterSend(NMailMessage mail) {
-                                sendCount[0]++;
-                            }
-
-                            @Override
-                            public void onSendError(NMailMessage mail, Throwable exc) {
-                                exc.printStackTrace();
-                            }
-                        });
-                        System.out.println("####    sent " + sendCount[0] + " using template " + path);
+                    @Override
+                    public void onAfterSend(NMailMessage mail) {
+                        sendCount[0]++;
                     }
-                }
+
+                    @Override
+                    public void onSendError(NMailMessage mail, Throwable exc) {
+                        exc.printStackTrace();
+                    }
+                });
+                System.out.println("####    sent " + sendCount[0] + " using template " + path);
             }
-        });
+        }
     }
 
 
