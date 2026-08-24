@@ -7,9 +7,9 @@ import net.thevpc.nmail.NMailListener;
 import net.thevpc.nmail.NMailMessage;
 
 import net.thevpc.nmail.NMail;
+import net.thevpc.nuts.app.NApplication;
 import net.thevpc.nuts.app.NApp;
-import net.thevpc.nuts.app.NAppDefinition;
-import net.thevpc.nuts.app.NAppRunner;
+import net.thevpc.nuts.app.NAppRun;
 import net.thevpc.nuts.cmdline.NArg;
 import net.thevpc.nuts.cmdline.NCmdLine;
 import net.thevpc.nuts.cmdline.NCmdLineRunner;
@@ -18,19 +18,19 @@ import net.thevpc.nuts.io.NPath;
 import net.thevpc.nuts.util.NBlankable;
 import net.thevpc.nuts.text.NMsg;
 
-@NAppDefinition
+@NApp
 public class NMailMain {
 
     LinkedHashSet<String> files = new LinkedHashSet<>();
     String db;
 
     public static void main(String[] args) {
-        NApp.builder(args).run();
+        NApplication.builder(args).run();
     }
 
-    @NAppRunner
+    @NAppRun
     public void run() {
-        NApp.of().runCmdLine(new NCmdLineRunner() {
+        NApplication.of().runCmdLine(new NCmdLineRunner() {
             @Override
             public boolean next(NArg arg, NCmdLine cmdLine) {
                 if(arg.isOption()){
@@ -63,7 +63,7 @@ public class NMailMain {
             public void run(NCmdLine cmdLine) {
                 for (String f : files) {
                     List<NPath> paths = getValidFilePaths(NPath.of(f), ".nmail",
-                            NBlankable.isBlank(db) ? NApp.of().confFolder().toString() : db
+                            NBlankable.isBlank(db) ? NApplication.of().confFolder().toString() : db
                     );
                     if (paths.isEmpty()) {
                         cmdLine.throwError(NMsg.ofC("invalid messageId %s", f));
