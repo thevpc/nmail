@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.thevpc.nmail</groupId>
     <artifactId>nmail-lib</artifactId>
-    <version>1.3.0</version> <!--version updated -->
+    <version>1.4.0</version> <!--version updated -->
     <packaging>jar</packaging>
     <name>net.thevpc.nmail.nmail</name>
     <url>https://github.com/thevpc/upa/wiki</url>
@@ -80,14 +80,14 @@
             <version>1.6.2</version>
         </dependency>
         <dependency><groupId>javax.mail</groupId><artifactId>javax.mail-api</artifactId><version>1.6.2</version></dependency>
-        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.8.2</version><scope>test</scope></dependency>
+        <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.10.0</version><scope>test</scope></dependency>
     </dependencies>
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
@@ -110,7 +110,7 @@
 
             <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.0.2</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <phase>process-sources</phase>

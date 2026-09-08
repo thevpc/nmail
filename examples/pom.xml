@@ -3,9 +3,9 @@
 
     <groupId>net.thevpc.tutorials.nmail</groupId>
     <artifactId>examples-nmail</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
     <dependencies>
-        <dependency><groupId>net.thevpc.nmail</groupId><artifactId>nmail-lib</artifactId><version>1.3.0</version></dependency>
+        <dependency><groupId>net.thevpc.nmail</groupId><artifactId>nmail-lib</artifactId><version>1.4.0</version></dependency>
     </dependencies>
     <repositories>
         <repository><id>vpc-public-maven</id><url>https://raw.github.com/thevpc/vpc-public-maven/master</url><snapshots>
